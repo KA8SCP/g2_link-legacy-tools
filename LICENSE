@@ -1,0 +1,10 @@
+Licensing status
+================
+
+No blanket license is assigned by this packaging draft. The project owner must
+choose a license for newly authored documentation and scripts before publication.
+Dashboard provenance and rights must be confirmed before its source is imported.
+MonLink's exact upstream version, notices and license must be reviewed before a
+derived patch is distributed. No complete MonLink program is included.
+Existing g2_link, DPlus and MonLink retain their respective licenses and notices.
+This file is a status notice, not a grant of permission or a standard license.

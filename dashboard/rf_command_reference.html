@@ -1,0 +1,58 @@
+<details>
+<summary><strong>RF Command Reference</strong></summary>
+<p>Send commands on the WB1GOF module you want to control.
+URCALL commands use exactly eight characters. In the examples below,
+each &middot; represents a space; do not enter the dots.
+After issuing a command, restore URCALL to <code>CQCQCQ</code>
+for normal conversations.</p>
+
+<h3>URCALL commands</h3>
+<div class="table">
+<table>
+<thead><tr><th>Action</th><th>DPlus</th><th>g2_link</th></tr></thead>
+<tbody>
+<tr>
+<td>Link</td>
+<td><code>REF050CL</code> &mdash; REF050 C</td>
+<td><code>DCS049CO</code> &mdash; DCS049 C<br>
+<code>XRF049CO</code> &mdash; XRF049 C</td>
+</tr>
+<tr>
+<td>Unlink</td>
+<td><code>&middot;&middot;&middot;&middot;&middot;&middot;&middot;U</code></td>
+<td><code>&middot;&middot;&middot;&middot;&middot;&middot;&middot;T</code></td>
+</tr>
+<tr>
+<td>Link information</td>
+<td><code>&middot;&middot;&middot;&middot;&middot;&middot;&middot;I</code></td>
+<td><code>&middot;&middot;&middot;&middot;&middot;&middot;&middot;W</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The eighth character selects the command:
+DPlus <strong>L</strong>ink, <strong>U</strong>nlink,
+<strong>I</strong>nformation; g2_link <strong>O</strong>pen,
+<strong>T</strong>erminate, <strong>W</strong>hat is linked.
+For a link command, the seventh character selects the remote reflector module.
+Unlink both applications before switching between DPlus and g2_link.</p>
+
+<h3>g2_link DTMF commands</h3>
+<p>These RF tone commands require <code>g2_link_dtmf.sh</code>
+running alongside g2_link. They control the local module receiving your transmission.</p>
+<div class="table">
+<table>
+<thead><tr><th>Action</th><th>DTMF</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Unlink g2_link</td><td><code>73</code></td><td>Unlink the local module</td></tr>
+<tr><td>g2_link status</td><td><code>99</code></td><td>Report the local module's link status</td></tr>
+<tr><td>Link XRF</td><td><code>#nnnmm</code></td><td><code>#02102</code> &rarr; XRF021 B</td></tr>
+<tr><td>Link DCS</td><td><code>Dnnnmm</code></td><td><code>D04903</code> &rarr; DCS049 C</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>nnn</code> is the three-digit reflector number.
+<code>mm</code> is the two-digit remote module number:
+<code>01=A</code>, <code>02=B</code>, <code>03=C</code>, through
+<code>26=Z</code>. The <code>D</code> prefix is the DTMF D tone.</p>
+</details>

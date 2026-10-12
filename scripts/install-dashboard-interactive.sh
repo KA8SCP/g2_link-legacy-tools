@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+# Dashboard only: do not install or restart gateway services.
+set -euo pipefail
+umask 077
+die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
+ask() {
+    local answer
+    read -r -p "$2 [$3]: " answer
+    printf -v "$1" '%s' "${answer:-$3}"
+}
+yes() { local answer; read -r -p "$1 [y/N]: " answer; [[ $answer == y || $answer == Y ]]; }
+[[ ${EUID:-1} == 0 ]] || die 'Run as root on the gateway.'
+for utility in php git sha256sum tar install mktemp realpath getent curl stat; do
+    command -v "$utility" >/dev/null || die "Missing prerequisite: $utility"
+done
+php -r 'exit(version_compare(PHP_VERSION,"5.4.0",">=") ? 0 : 1);' || die 'PHP CLI 5.4 or newer is required.'
+printf 'Unified D-STAR Dashboard v0.4.2 installation\n'
+printf 'Apache/PHP, DPlus and g2_link must already be installed as appropriate.\n'
+printf 'This installs the dashboard only; gateway services and link settings stay unchanged.\n\n'
+package_dir=''
+if [[ ${1:-} == --package-dir && $# == 2 ]]; then
+    package_dir=$(realpath -e -- "$2")
+elif (( $# )); then
+    die 'Usage: install-dashboard-interactive.sh [--package-dir /reviewed/package]'
+fi
+work=$(mktemp -d /var/tmp/g2-dashboard-install.XXXXXXXX)
+cleanup() { [[ -d $work && $work == /var/tmp/g2-dashboard-install.* ]] && rm -rf -- "$work"; }
+trap cleanup EXIT
+if [[ -z $package_dir ]]; then
+    ask repo 'GitHub repository URL' 'https://github.com/KA8SCP/g2_link-legacy-tools.git'
+    [[ $repo =~ ^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(\.git)?$ ]] || die 'Use a GitHub HTTPS repository URL without credentials.'
+    ask ref 'Release tag or branch (prefer a reviewed release tag)' 'main'
+    [[ $ref != -* && $ref != *$'\n'* && -n $ref ]] || die 'Invalid Git ref.'
+    git clone --depth 1 --branch "$ref" -- "$repo" "$work/package"
+    package_dir=$work/package
+    revision=$(git -C "$package_dir" rev-parse HEAD)
+else
+    repo='local reviewed package'; ref='local'; revision='local package; see SHA256SUMS'
+fi
+source_dir=$package_dir/dashboard
+[[ -f $source_dir/SHA256SUMS && -f $source_dir/dashboard_config.php ]] || die 'Repository does not contain the current portable dashboard release.'
+bash "$package_dir/scripts/verify-dashboard.sh"
+
+ask gateway 'Gateway callsign (without module; required)' ''
+gateway=${gateway^^}
+[[ $gateway =~ ^[A-Z0-9]{3,7}$ ]] || die 'Invalid callsign.'
+ask timezone 'Gateway log timezone' 'America/New_York'
+php -r 'try {new DateTimeZone($argv[1]);} catch(Exception $e) {exit(1);}' "$timezone" || die 'Invalid timezone.'
+ask document_root 'Apache document root' '/var/www/html'
+document_root=$(realpath -e -- "$document_root")
+[[ -d $document_root && $document_root != / && $document_root != *$'\n'* ]] || die 'Invalid document root.'
+ask destination 'Dashboard directory' "$document_root/dashboard"
+[[ ! -L $destination ]] || die 'Dashboard destination must not be a symlink.'
+destination=$(realpath -m -- "$destination")
+[[ $destination == "$document_root/"* && $destination != "$document_root" ]] || die 'Dashboard must be below the document root.'
+[[ -d $(dirname -- "$destination") ]] || die 'Dashboard parent directory must exist.'
+[[ ! -e $destination || -d $destination ]] || die 'Destination is not a directory.'
+[[ $destination != *$'\n'* ]] || die 'Invalid destination.'
+ask dp_status 'DPlus status HTML' '/dstar/tmp/status.html'
+ask g2_status 'g2_link status HTML' "$document_root/fs.html"
+ask dp_log 'DPlus log' '/var/log/dplus.log'
+ask g2_log 'g2_link log' '/var/log/g2_link.log'
+for path in "$dp_status" "$g2_status" "$dp_log" "$g2_log"; do
+    [[ $path == /* && $path != *$'\n'* && $path != *$'\r'* ]] || die 'Input paths must be absolute.'
+done
+default_owner=apache
+getent passwd apache >/dev/null || default_owner=www-data
+ask web_user 'Apache/PHP operating-system user' "$default_owner"
+getent passwd "$web_user" >/dev/null || die 'Web user does not exist.'
+default_group=$(id -gn "$web_user")
+ask web_group 'Web file group' "$default_group"
+getent group "$web_group" >/dev/null || die 'Web group does not exist.'
+for path in "$dp_status" "$g2_status" "$dp_log" "$g2_log"; do
+    if [[ ! -f $path ]]; then
+        printf 'Unavailable input: %s\n' "$path"
+        yes 'Continue with this input unavailable?' || die 'Supply the correct input path first.'
+    elif command -v runuser >/dev/null; then
+        runuser -u "$web_user" -- test -r "$path" || die "Web user cannot read $path; review local permissions before installation."
+    fi
+done
+relative=${destination#"$document_root"}
+ask check_url 'Local dashboard URL for HTTP verification' "http://127.0.0.1$relative/"
+[[ $check_url =~ ^https?://(127\.0\.0\.1|localhost|\[::1\])(:[0-9]+)?/ ]] || die 'Verification URL must be local HTTP/HTTPS.'
+ask backup_root 'Backup directory outside the web root' '/var/backups/g2-dashboard'
+backup_root=$(realpath -m -- "$backup_root")
+[[ $backup_root != / && $backup_root != "$document_root" && $backup_root != "$document_root/"* ]] || die 'Backups must be outside the web root.'
+if [[ ! -e $backup_root ]]; then
+    install -d -m 0700 -- "$backup_root"
+fi
+[[ -d $backup_root && $(stat -c %u "$backup_root") == 0 &&
+    $(stat -c %a "$backup_root") == 700 ]] || die 'Use a dedicated root-owned backup directory with mode 0700.'
+stamp=$(date -u +%Y%m%dT%H%M%SZ)-$$
+backup=$backup_root/dashboard-$stamp.tar.gz
+
+candidate=$work/candidate
+mkdir -- "$candidate"
+mapfile -t files < <(awk '{print $2}' "$source_dir/SHA256SUMS")
+(( ${#files[@]} >= 15 )) || die 'Incomplete dashboard manifest.'
+for file in "${files[@]}"; do
+    [[ $file =~ ^[A-Za-z0-9_.-]+$ && ! -L $source_dir/$file && -f $source_dir/$file ]] || die 'Unsafe or missing release file.'
+    install -m 0644 -- "$source_dir/$file" "$candidate/$file"
+    [[ ! -L $destination/$file ]] || die "Existing deployment file is a symlink: $file"
+done
+[[ ! -L $destination/dashboard.local.php ]] || die 'Existing site configuration is a symlink.'
+php -r '
+$keys=array("callsign","timezone","document_root","dplus_status","g2_status","dplus_log","g2_log");
+$settings=array(); foreach($keys as $i=>$key) $settings[$key]=$argv[$i+2];
+$text="<?php\nreturn ".var_export($settings,true).";\n";
+if(file_put_contents($argv[1],$text)!==strlen($text)) exit(1);
+' "$candidate/dashboard.local.php" "$gateway" "$timezone" "$document_root" "$dp_status" "$g2_status" "$dp_log" "$g2_log"
+php -l "$candidate/dashboard.local.php"
+php -r 'require $argv[1]."/dashboard_config.php"; date_default_timezone_set(dashboardConfig("timezone")); echo "Configuration: ",dashboardConfig("callsign"),"\n";' "$candidate"
+
+printf '\nReady to install %s at %s\nRepository: %s\nRef: %s\nCommit: %s\nVerification: %s\nBackup: %s\n' "$gateway" "$destination" "$repo" "$ref" "$revision" "$check_url" "$backup"
+yes 'Install this reviewed configuration?' || { echo 'Cancelled; dashboard unchanged.'; exit 0; }
+existed=false
+if [[ -d $destination ]]; then
+    existed=true
+    tar -czf "$backup" -C "$(dirname -- "$destination")" -- "$(basename -- "$destination")"
+else
+    printf 'New installation; no previous dashboard.\n' > "$backup_root/new-install-$stamp.txt"
+fi
+printf 'Repository: %s\nRef: %s\nCommit: %s\nDestination: %s\n' "$repo" "$ref" "$revision" "$destination" > "$backup_root/install-$stamp.txt"
+cp -- "$source_dir/SHA256SUMS" "$backup_root/SHA256SUMS-$stamp"
+rollback() {
+    trap - ERR
+    echo 'Installation verification failed; reverting dashboard.' >&2
+    if [[ -d $destination ]]; then mv -- "$destination" "$backup_root/failed-$stamp"; fi
+    if $existed; then tar -xzf "$backup" -C "$(dirname -- "$destination")"; fi
+    echo "Failure files and backup retained in $backup_root" >&2
+}
+trap 'rollback; exit 1' ERR
+install -d -o "$web_user" -g "$web_group" -m 0755 -- "$destination"
+# Dependencies and configuration first; entry point last.
+for file in "${files[@]}" dashboard.local.php; do
+    [[ $file == index.php ]] && continue
+    install -o "$web_user" -g "$web_group" -m 0644 -- "$candidate/$file" "$destination/$file"
+done
+install -o "$web_user" -g "$web_group" -m 0644 -- "$candidate/index.php" "$destination/index.php"
+if command -v restorecon >/dev/null; then restorecon -R -- "$destination"; fi
+bash "$package_dir/scripts/verify-dashboard.sh" "$destination"
+curl --fail --silent --show-error --max-time 120 "$check_url" > "$work/page.html"
+php -r '
+$s=file_get_contents($argv[1]);
+$ok=strpos($s,"Unified Last Heard")!==false && strpos($s,"RF Command Reference")!==false &&
+strpos($s,"Remote Users")!==false && strpos($s,"Software &amp; Sources")!==false &&
+!preg_match("/Warning:|Fatal error:|Parse error:|<\\?php/",$s);
+exit($ok ? 0 : 1);
+' "$work/page.html"
+trap - ERR
+printf '\nInstalled and HTTP-verified: %s\n' "$check_url"
+if $existed; then
+    printf 'Rollback archive: %s\n' "$backup"
+else
+    printf 'New-install record: %s/new-install-%s.txt\n' "$backup_root" "$stamp"
+fi
+printf 'Review the page and perform local RF/remote transmission tests.\n'

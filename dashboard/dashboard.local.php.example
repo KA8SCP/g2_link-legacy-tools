@@ -1,0 +1,11 @@
+<?php
+/* Copy to dashboard.local.php for a manual installation. */
+return array(
+    'callsign' => 'W4CRL',
+    'timezone' => 'America/New_York',
+    'document_root' => '/var/www/html',
+    'dplus_status' => '/dstar/tmp/status.html',
+    'g2_status' => '/var/www/html/fs.html',
+    'dplus_log' => '/var/log/dplus.log',
+    'g2_log' => '/var/log/g2_link.log'
+);
