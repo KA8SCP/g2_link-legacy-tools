@@ -15,7 +15,7 @@ for utility in php git sha256sum tar install mktemp realpath getent curl stat; d
 done
 php -r 'exit(version_compare(PHP_VERSION,"5.4.0",">=") ? 0 : 1);' || die 'PHP CLI 5.4 or newer is required.'
 printf 'Unified D-STAR Dashboard v0.4.2 installation\n'
-printf 'Apache/PHP, DPlus and g2_link must already be installed as appropriate.\n'
+printf 'A web server with PHP, DPlus and g2_link must already be installed as appropriate.\n'
 printf 'This installs the dashboard only; gateway services and link settings stay unchanged.\n\n'
 package_dir=''
 if [[ ${1:-} == --package-dir && $# == 2 ]]; then
@@ -46,7 +46,7 @@ gateway=${gateway^^}
 [[ $gateway =~ ^[A-Z0-9]{3,7}$ ]] || die 'Invalid callsign.'
 ask timezone 'Gateway log timezone' 'America/New_York'
 php -r 'try {new DateTimeZone($argv[1]);} catch(Exception $e) {exit(1);}' "$timezone" || die 'Invalid timezone.'
-ask document_root 'Apache document root' '/var/www/html'
+ask document_root 'Web document root' '/var/www/html'
 document_root=$(realpath -e -- "$document_root")
 [[ -d $document_root && $document_root != / && $document_root != *$'\n'* ]] || die 'Invalid document root.'
 ask destination 'Dashboard directory' "$document_root/dashboard"
@@ -63,9 +63,21 @@ ask g2_log 'g2_link log' '/var/log/g2_link.log'
 for path in "$dp_status" "$g2_status" "$dp_log" "$g2_log"; do
     [[ $path == /* && $path != *$'\n'* && $path != *$'\r'* ]] || die 'Input paths must be absolute.'
 done
-default_owner=apache
-getent passwd apache >/dev/null || default_owner=www-data
-ask web_user 'Apache/PHP operating-system user' "$default_owner"
+default_owner=''
+if command -v ps >/dev/null; then
+    mapfile -t worker_users < <(ps -eo user=,comm= | awk '$1 != "root" && $2 == "php-fpm" {print $1}' | sort -u)
+    if (( ${#worker_users[@]} == 1 )); then default_owner=${worker_users[0]}; fi
+    if [[ -z $default_owner ]]; then
+        mapfile -t worker_users < <(ps -eo user=,comm= | awk '$1 != "root" && ($2 == "httpd" || $2 == "apache2") {print $1}' | sort -u)
+        if (( ${#worker_users[@]} == 1 )); then default_owner=${worker_users[0]}; fi
+    fi
+fi
+if [[ -z $default_owner ]]; then
+    for account in apache nginx www-data; do
+        if getent passwd "$account" >/dev/null; then default_owner=$account; break; fi
+    done
+fi
+ask web_user 'PHP worker operating-system user' "$default_owner"
 getent passwd "$web_user" >/dev/null || die 'Web user does not exist.'
 default_group=$(id -gn "$web_user")
 ask web_group 'Web file group' "$default_group"
