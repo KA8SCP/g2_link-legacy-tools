@@ -149,6 +149,7 @@ if ($g2History['error'] === '') {
         $unifiedActivity, $g2History['records']
     );
 }
+$unifiedActivity = dplusDashboardHistoryAnnotate($historical, $unifiedActivity);
 usort($unifiedActivity, 'unifiedActivitySort');
 
 $activityFilter = isset($_GET['activity']) && is_string($_GET['activity'])
@@ -171,10 +172,7 @@ foreach ($unifiedActivity as $record) {
 }
 
 $unifiedDisplay = array_slice($filteredActivity, 0, 30);
-$unifiedDisplay = dplusDashboardHistoryAnnotate(
-    $historical,
-    $unifiedDisplay
-);
+
 foreach ($unifiedDisplay as &$displayRow) {
     if ($displayRow['activity'] === 'Remote' &&
         $displayRow['connection'] === 'g2_link') {
@@ -284,7 +282,7 @@ $moduleDisplay = $r['module'];
 if ($r['activity'] === 'Remote') {
     $moduleDisplay = 'Unknown';
     if (isset($r['module_source']) &&
-        $r['module_source'] === 'g2_remote_report' &&
+        in_array($r['module_source'], array('g2_remote_report', 'dplus_hotspot_header'), true) &&
         in_array($r['module'], array('A','B','C','D','E'), true)) {
         $moduleDisplay = $r['module'];
     }

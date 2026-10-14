@@ -37,11 +37,18 @@ function dplusLocalHeadersRead($logfile)
                 'time' => $m[2],
                 'streamid' => strtolower($m[1]),
                 'session' => $session,
+                'origin' => 'local',
                 'line_number' => $lineNumber
             );
             continue;
         }
 
+        if (preg_match('/^Remote dongle tx start \(([^)]*)\)\s+streamid\s+([0-9a-f]+)\s+hdr OK\s+(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?)\s*$/i', $line, $m)) {
+            $pending = array('time'=>$m[3], 'streamid'=>strtolower($m[2]),
+                'session'=>$session, 'line_number'=>$lineNumber, 'origin'=>'hotspot',
+                'start_call'=>strtoupper(trim($m[1])));
+            continue;
+        }
         if ($pending === null) {
             continue;
         }
@@ -56,14 +63,19 @@ function dplusLocalHeadersRead($logfile)
             $parts = explode('/', trim($m[4]));
             $call = strtoupper(trim($parts[0]));
 
-            if ($call !== '' &&
-                preg_match('/^' . preg_quote(dashboardConfig('callsign'), '/') . ' ([A-E])$/', $rpt1, $module)) {
+            $moduleHeader = $pending['origin'] === 'hotspot' ? $rpt2 : $rpt1;
+            $startMatches = $pending['origin'] !== 'hotspot' ||
+                strtoupper(trim(preg_replace('/\s+/', ' ', $call))) ===
+                strtoupper(trim(preg_replace('/\s+/', ' ', $pending['start_call'])));
+            if ($call !== '' && $startMatches &&
+                preg_match('/^' . preg_quote(dashboardConfig('callsign'), '/') . ' ([A-E])$/', $moduleHeader, $module)) {
                 $record = $pending;
                 $record['callsign'] = $call;
                 $record['module'] = $module[1];
                 $record['rpt1'] = $rpt1;
                 $record['rpt2'] = $rpt2;
                 $record['urcall'] = trim($m[3]);
+                $record['suffix'] = isset($parts[1]) ? strtoupper(trim($parts[1])) : '';
                 $result['records'][] = $record;
             }
         }
@@ -101,7 +113,7 @@ function dplusLocalHeadersAnnotate($rows, $headers)
             continue;
         }
 
-        $key = strtoupper(trim($header['callsign'])) . '|' .
+        $key = strtoupper(trim(preg_replace('/\s+/', ' ', $header['callsign']))) . '|' .
             trim($header['module']) . '|' . $date->getTimestamp();
         if (!isset($matches[$key])) {
             $matches[$key] = array();
@@ -120,7 +132,7 @@ function dplusLocalHeadersAnnotate($rows, $headers)
             continue;
         }
 
-        $key = strtoupper(trim($row['callsign'])) . '|' .
+        $key = strtoupper(trim(preg_replace('/\s+/', ' ', $row['callsign']))) . '|' .
             trim($row['module']) . '|' . (int)$row['epoch'];
         if (!isset($matches[$key])) {
             continue;
@@ -142,6 +154,16 @@ function dplusLocalHeadersAnnotate($rows, $headers)
         $row['rpt1'] = $header['rpt1'];
         $row['rpt2'] = $header['rpt2'];
         $row['local_header_source'] = 'dplus_log';
+        if (isset($header['origin']) && $header['origin'] === 'hotspot' &&
+            isset($row['connection']) && $row['connection'] === 'DPlus') {
+            $row['activity'] = 'Remote';
+            $row['via'] = 'HotSpot';
+            $row['suffix'] = $header['suffix'];
+            $row['streamid'] = $header['streamid'];
+            $row['module_source'] = 'dplus_hotspot_header';
+            $row['rf_delivery'] = 'unconfirmed';
+            if (isset($header['history_session'])) $row['history_session'] = $header['history_session'];
+        }
     }
     unset($row);
     return $rows;
