@@ -43,7 +43,7 @@ if [[ -z $package_dir ]]; then
     [[ $ref != -* && $ref != *$'\n'* && -n $ref ]] || die 'Invalid Git ref.'
     git clone --depth 1 --branch "$ref" -- "$repo" "$work/package"
     package_dir=$work/package
-    revision=$(git -C "$package_dir" rev-parse HEAD)
+    revision=$(cd -- "$package_dir" && git rev-parse HEAD)
 else
     repo='local reviewed package'; ref='local'; revision='local package; see SHA256SUMS'
 fi
