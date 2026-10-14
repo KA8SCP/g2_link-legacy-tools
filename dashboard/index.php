@@ -149,7 +149,11 @@ if ($g2History['error'] === '') {
         $unifiedActivity, $g2History['records']
     );
 }
-$unifiedActivity = dplusDashboardHistoryAnnotate($historical, $unifiedActivity);
+// Classify headers before filtering, but limit expensive timeline lookups
+// to the visible page rather than every retained transmission.
+if ($historical['error'] === '' && isset($historical['local_headers'])) {
+    $unifiedActivity = dplusLocalHeadersAnnotate($unifiedActivity, $historical['local_headers']);
+}
 usort($unifiedActivity, 'unifiedActivitySort');
 
 $activityFilter = isset($_GET['activity']) && is_string($_GET['activity'])
@@ -172,6 +176,7 @@ foreach ($unifiedActivity as $record) {
 }
 
 $unifiedDisplay = array_slice($filteredActivity, 0, 30);
+$unifiedDisplay = dplusDashboardHistoryAnnotate($historical, $unifiedDisplay);
 
 foreach ($unifiedDisplay as &$displayRow) {
     if ($displayRow['activity'] === 'Remote' &&
