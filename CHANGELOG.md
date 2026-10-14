@@ -40,3 +40,9 @@
 - Completed operator-observed post-restoration interlock sequence: RF T unlink, marker removal and MonLink REF049 C restoration confirmed with logs; module B retained REF050 C in supplied samples.
 
 - K1HRO no-g2_link CentOS 7.9 test confirms MonLink-generated B default recovery to REF050 C, correlated with DPlus response; C retains REF030 C in supplied samples. Scheduled/AlmaLinux cases remain pending.
+
+## Unreleased — October 14, 2026
+
+- Require an installed executable g2_link and nonempty readable status HTML before dashboard PHP checks, downloads or deployment; remove reduced-mode override for this prerequisite.
+- Document K2BWK failed-install rollback, empty placeholders, and distinction between stock Icom services and dashboard web PHP requirements. No automatic web/service changes.
+

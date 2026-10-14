@@ -6,7 +6,7 @@ The dashboard combines module status, connected clients and chronological activi
 
 ## Install on an existing gateway
 
-Apache with PHP integration, PHP CLI 5.4+, Bash 4+, Git, curl and coreutils must already be available. PHP's effective web user needs read access to the configured status pages and logs. No database or linking service is installed.
+An installed g2_link executable and nonempty, readable status feed must be present first. The installer stops if either is unavailable, before PHP checks or downloads. Working web PHP integration, PHP CLI 5.4+, Bash 4+, Git, curl and coreutils are dashboard prerequisites. PHP-FPM is not required universally and is not a stock Icom G3.x prerequisite. PHP's effective web user needs read access to the configured status pages and logs. No database or linking service is installed.
 
 ```bash
 git clone https://github.com/KA8SCP/g2_link-legacy-tools.git
@@ -33,3 +33,7 @@ See [installation](docs/INSTALL.md), [dashboard behavior](docs/DASHBOARD.md), [m
 - **Portable package:** site configuration and prompted install/upgrade procedure added. W4CRL v0.4 upgrade is planned; no W4CRL deployment or fresh-gateway installer qualification is claimed yet.
 
 The separate MonLink review materials remain under their existing qualification/licensing status. Installing the dashboard does not install or apply the MonLink patch. This repository does not contain the complete upstream MonLink program or gateway binaries.
+
+## October 14 installation qualification
+
+K2BWK did not qualify: g2_link was not found and its status/log files were empty placeholders. Failed dashboard installs rolled back. The installer now makes g2_link qualification mandatory before dashboard PHP/web checks. The separate Nginx directory-index/PHP-backend issue remains unmodified; no production gateway or web services were changed by this repository update. See [installation notes](docs/INSTALL.md).
