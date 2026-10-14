@@ -17,3 +17,8 @@ Before qualifying an installer release on CentOS 7/PHP 5.4 and AlmaLinux 9:
 WB1GOF production tests before portability are recorded in CHANGELOG.md. New installer acceptance and W4CRL deployment remain pending until observed on the gateways.
 
 Portable-package checks, October 12: all PHP files pass PHP 8.4.26 CLI syntax checks; 15 isolated fixtures pass, including W4CRL page-title/RF-reference rendering. Bash 5.2 syntax validation passes for all scripts. WB1GOF also passed the full release checksum, syntax and 15-fixture check on PHP 5.4. Linux installer/rollback acceptance remains pending. W4CRL reports AlmaLinux 9.5, PHP 8.2.33 and PHP-FPM workers running as nginx; its upgrade remains pending.
+
+## Mandatory prerequisite gate
+
+On an isolated Linux test system, verify missing/non-executable g2_link, missing/empty status HTML and an alternate valid executable/status path. Failed cases must exit before PHP checks, Git downloads, backup creation and web deployment. For a qualifying case confirm subsequent PHP prerequisites are reached and the binary is never executed. Confirm no gateway or web service configuration changes. These new behavioral cases await Linux qualification; local Bash is unavailable in the Windows workspace.
+
