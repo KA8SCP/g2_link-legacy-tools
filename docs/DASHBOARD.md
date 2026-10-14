@@ -25,3 +25,8 @@ g2_link rows show Associated DPlus Link as **Not assessed**. A DPlus unlink neve
 DMR, NXDN, P25, M17 and other incoming g2_link callsign suffixes are preserved. `DPLS` displays as `DPlus`. Suffixes are reported header text, not independently verified protocol provenance or User Message. No transmitted message is invented from a suffix.
 
 URCALL uses eight characters: DPlus L/U/I and g2_link O/T/W in character eight. Link examples: `REF050CL`, `DCS049CO`, `XRF049CO`; unlink/status use seven spaces followed by U/I/T/W. DTMF 73 unlinks g2_link, 99 reports status, #nnnmm links XRF and Dnnnmm links DCS; modules 01=A through 26=Z. DTMF requires the separately running g2_link_dtmf.sh. Its supplied executable logic does not implement the stale comment's *REF example.
+
+## DPlus header matching correction
+
+Normalize whitespace consistently for logged and HTML MYCALL matching while retaining extensions. Unique exact callsign/module/second matches to valid Remote dongle tx start headers identify directly connected hotspot activity, preserve station RPT1 and gateway RPT2 plus suffix, and use the reported RPT2 module without claiming RF delivery or reflector linking. Classification occurs before Local/Remote filtering. Ambiguous events and mismatched start/MYCALL or other-gateway headers remain unresolved. No external DPlusMon data is fetched by the dashboard.
+
