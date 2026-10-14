@@ -10,12 +10,22 @@ ask() {
 }
 yes() { local answer; read -r -p "$1 [y/N]: " answer; [[ $answer == y || $answer == Y ]]; }
 [[ ${EUID:-1} == 0 ]] || die 'Run as root on the gateway.'
+# Qualify g2_link before checking dashboard-specific PHP/web prerequisites.
+# Paths are explicit because legacy installations need not put g2_link in PATH.
+default_g2_binary=$(command -v g2_link || true)
+ask g2_binary 'Existing g2_link executable' "${default_g2_binary:-/dstar/tools/g2_link}"
+[[ $g2_binary == /* && $g2_binary != *$'\n'* && $g2_binary != *$'\r'* ]] || die 'g2_link executable path must be absolute.'
+[[ -f $g2_binary && -x $g2_binary ]] || die 'g2_link prerequisite missing: supply an installed executable before installing the unified dashboard.'
+ask g2_status 'Existing nonempty g2_link status HTML' '/var/www/html/fs.html'
+[[ $g2_status == /* && $g2_status != *$'\n'* && $g2_status != *$'\r'* ]] || die 'g2_link status path must be absolute.'
+[[ -f $g2_status && -s $g2_status && -r $g2_status ]] || die 'g2_link status feed is missing, empty or unreadable. Configure g2_link/status generation before installing the unified dashboard; empty placeholders do not qualify.'
+printf 'g2_link prerequisites found; checking dashboard-specific PHP/web requirements.\n'
 for utility in php git sha256sum tar install mktemp realpath getent curl stat; do
     command -v "$utility" >/dev/null || die "Missing prerequisite: $utility"
 done
 php -r 'exit(version_compare(PHP_VERSION,"5.4.0",">=") ? 0 : 1);' || die 'PHP CLI 5.4 or newer is required.'
 printf 'Unified D-STAR Dashboard v0.4.2 installation\n'
-printf 'A web server with PHP, DPlus and g2_link must already be installed as appropriate.\n'
+printf 'Existing DPlus and working web PHP integration are required; PHP-FPM is not a universal Icom prerequisite.\n'
 printf 'This installs the dashboard only; gateway services and link settings stay unchanged.\n\n'
 package_dir=''
 if [[ ${1:-} == --package-dir && $# == 2 ]]; then
@@ -57,7 +67,7 @@ destination=$(realpath -m -- "$destination")
 [[ ! -e $destination || -d $destination ]] || die 'Destination is not a directory.'
 [[ $destination != *$'\n'* ]] || die 'Invalid destination.'
 ask dp_status 'DPlus status HTML' '/dstar/tmp/status.html'
-ask g2_status 'g2_link status HTML' "$document_root/fs.html"
+
 ask dp_log 'DPlus log' '/var/log/dplus.log'
 ask g2_log 'g2_link log' '/var/log/g2_link.log'
 for path in "$dp_status" "$g2_status" "$dp_log" "$g2_log"; do
@@ -167,3 +177,4 @@ else
     printf 'New-install record: %s/new-install-%s.txt\n' "$backup_root" "$stamp"
 fi
 printf 'Review the page and perform local RF/remote transmission tests.\n'
+
