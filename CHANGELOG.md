@@ -49,3 +49,7 @@
 
 - Correct padded callsign matching and enrich uniquely matched DPlus hotspot starts with actual RPT1/RPT2 and suffix. Classify before Local/Remote filtering; preserve ambiguity and unconfirmed RF delivery.
 
+
+- Restore expensive DPlus timeline enrichment to the visible 30 rows; keep lightweight hotspot/header classification before filtering. WB1GOF PHP 5.4 timed out with all-history enrichment; target performance confirmation pending.
+- Use a subshell instead of git -C for older CentOS 7 Git compatibility.
+
