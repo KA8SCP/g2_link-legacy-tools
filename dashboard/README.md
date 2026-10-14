@@ -7,3 +7,6 @@ The release adds a shared `dashboard_config.php` and a per-site `dashboard.local
 Run `bash scripts/check-release.sh` from the repository root. The PHP fixtures use isolated temporary copies and synthetic logs. Manual installations can copy `dashboard.local.php.example` to `dashboard.local.php` and adjust every setting. Never commit the generated local file.
 
 See [installation](../docs/INSTALL.md) and [behavior](../docs/DASHBOARD.md). Production behavior was operator-verified on WB1GOF; the portable installer still requires gateway acceptance testing.
+
+October 14 qualification: the full dashboard installer requires an installed g2_link executable and nonempty readable status HTML before checking PHP/web prerequisites. Empty placeholders do not qualify. PHP CLI and web PHP execution are separate requirements; PHP-FPM is specific to some web configurations, not stock Icom G3.x. See the K2BWK findings in [installation](../docs/INSTALL.md).
+
