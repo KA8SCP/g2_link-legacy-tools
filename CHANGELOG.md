@@ -46,3 +46,6 @@
 - Require an installed executable g2_link and nonempty readable status HTML before dashboard PHP checks, downloads or deployment; remove reduced-mode override for this prerequisite.
 - Document K2BWK failed-install rollback, empty placeholders, and distinction between stock Icom services and dashboard web PHP requirements. No automatic web/service changes.
 
+
+- Correct padded callsign matching and enrich uniquely matched DPlus hotspot starts with actual RPT1/RPT2 and suffix. Classify before Local/Remote filtering; preserve ambiguity and unconfirmed RF delivery.
+
