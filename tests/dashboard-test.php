@@ -40,6 +40,39 @@ check('local headers enriched', $annotated[0]['rpt1'] === 'W4CRL C' && $annotate
 $duplicate = array_merge($headers['records'], $headers['records']);
 $annotated = dplusLocalHeadersAnnotate($rows, $duplicate);
 check('ambiguous local headers remain blank', $annotated[0]['rpt1'] === '');
+$spacingLog = str_replace('K1NR    /', 'N2MLH  W/', $local);
+file_put_contents($log, $spacingLog);
+$spacingHeaders = dplusLocalHeadersRead($log);
+$spacingRows = $rows; $spacingRows[0]['callsign'] = 'N2MLH W';
+$annotated = dplusLocalHeadersAnnotate($spacingRows, $spacingHeaders['records']);
+check('HTML spacing matches padded RF MYCALL', $annotated[0]['rpt1'] === 'W4CRL C');
+$spacingRows[0]['callsign'] = 'N2MLH P';
+$annotated = dplusLocalHeadersAnnotate($spacingRows, $spacingHeaders['records']);
+check('MYCALL extension remains distinct', $annotated[0]['rpt1'] === '');
+$hotspotLog = "Remote dongle tx start (KA8SCP  ) streamid e2f9  hdr OK 2026/10/14 18:01:44.925\n" .
+    "   rpt2 (W4CRL  B) rpt1 (KA8SCP P) urcall (CQCQCQ  ) mycall (KA8SCP  /52AP)\n";
+file_put_contents($log, $hotspotLog);
+$hotspotHeaders = dplusLocalHeadersRead($log);
+$hotspotRows = array(array('activity'=>'Local RF (reported)', 'connection'=>'DPlus',
+    'callsign'=>'KA8SCP', 'module'=>'B', 'epoch'=>strtotime('2026-10-14 18:01:44'), 'rpt1'=>'', 'rpt2'=>''));
+$annotated = dplusLocalHeadersAnnotate($hotspotRows, $hotspotHeaders['records']);
+check('hotspot headers preserve station RPT1 and gateway RPT2',
+    $annotated[0]['rpt1'] === 'KA8SCP P' && $annotated[0]['rpt2'] === 'W4CRL B');
+check('hotspot classification and suffix preserved without reflector link',
+    $annotated[0]['activity'] === 'Remote' && $annotated[0]['suffix'] === '52AP' &&
+    $annotated[0]['module'] === 'B' && $annotated[0]['rf_delivery'] === 'unconfirmed');
+$ambiguousHeaders = array_merge($hotspotHeaders['records'], $hotspotHeaders['records']);
+$annotated = dplusLocalHeadersAnnotate($hotspotRows, $ambiguousHeaders);
+check('ambiguous hotspot events remain unresolved', $annotated[0]['rpt1'] === '' && $annotated[0]['activity'] === 'Local RF (reported)');
+file_put_contents($log, str_replace('hdr OK', 'hdr BAD', $hotspotLog));
+$invalidHeaders = dplusLocalHeadersRead($log);
+check('invalid hotspot header rejected', count($invalidHeaders['records']) === 0);
+file_put_contents($log, str_replace('rpt2 (W4CRL  B)', 'rpt2 (OTHER  B)', $hotspotLog));
+$invalidHeaders = dplusLocalHeadersRead($log);
+check('other gateway hotspot header rejected', count($invalidHeaders['records']) === 0);
+file_put_contents($log, str_replace('mycall (KA8SCP  /52AP)', 'mycall (KD2OM   /51A )', $hotspotLog));
+$invalidHeaders = dplusLocalHeadersRead($log);
+check('hotspot start and MYCALL mismatch rejected', count($invalidHeaders['records']) === 0);
 $link = "101026 at 12:00:00:sending link request from mod C to link with: [DCS049  ] mod C [54.237.10.173]\n" .
     "101026 at 12:00:03:sending File:[/root/g2_link/linked.dat], mod:[C], RADIO_ID=[LINKED DCS049 C     ]\n";
 $tx = "101126 at 12:01:00:START from dcs: streamID=9,45, my=KA8SCP  , sfx=NXDN, ur=CQCQCQ  , rpt1=DCS049 C, rpt2=KA8SCP B, 100 bytes fromIP=54.237.10.173, source=DCS049 C\n";
