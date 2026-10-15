@@ -30,3 +30,26 @@ URCALL uses eight characters: DPlus L/U/I and g2_link O/T/W in character eight. 
 
 Normalize whitespace consistently for logged and HTML MYCALL matching while retaining extensions. Unique exact callsign/module/second matches to valid Remote dongle tx start headers identify directly connected hotspot activity, preserve station RPT1 and gateway RPT2 plus suffix, and use the reported RPT2 module without claiming RF delivery or reflector linking. Classification occurs before Local/Remote filtering. Ambiguous events and mismatched start/MYCALL or other-gateway headers remain unresolved. No external DPlusMon data is fetched by the dashboard.
 
+# Historical Associated Link column
+
+The unified Last Heard column combines source-labelled DPlus history and confirmed
+g2_link DCS associations at each transmission's timestamp. For example,
+`DPlus: Unlinked; g2_link: DCS049 C` means DPlus was unlinked while g2_link has
+positive historical evidence for DCS049 C. Simultaneous positive associations are
+both retained; the display does not silently prefer one source.
+
+g2_link local associations reuse the remote-history parser's matching DCS link
+request and linked announcement, with the local module preserved. Requests,
+unlink announcements, restarts, timeouts and retained-log boundaries clear old
+evidence. The lookup requires the whole one-second activity window to be within
+retained timestamp coverage and away from a state change. Clock regressions,
+read errors, missing confirmation and unsupported protocol evidence stay Unknown.
+XRF/XLX link history is not inferred from the current status page; additional
+verified event formats are required before those historical associations can be
+populated. This does not change the current Module Status display.
+
+Remote g2_link rows use their existing uniquely confirmed source/IP/module
+association. DPlus history is not applied to those streams. History collection
+uses the existing g2_link log pass, and only the maximum 30 visible rows receive
+the added indexed lookup. No gateway configuration or linking commands change.
+
