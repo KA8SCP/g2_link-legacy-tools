@@ -177,6 +177,7 @@ foreach ($unifiedActivity as $record) {
 
 $unifiedDisplay = array_slice($filteredActivity, 0, 30);
 $unifiedDisplay = dplusDashboardHistoryAnnotate($historical, $unifiedDisplay);
+$unifiedDisplay = dashboardAssociatedLinksAnnotate($g2History, $unifiedDisplay);
 
 foreach ($unifiedDisplay as &$displayRow) {
     if ($displayRow['activity'] === 'Remote' &&
@@ -253,7 +254,7 @@ if ($conf) {
 <a href="?activity=remote" <?=$activityFilter === 'remote' ? 'aria-current="page"' : ''?>>Remote</a>
 </nav>
 <p>Showing <?=count($unifiedDisplay)?> of <?=count($filteredActivity)?> records (maximum 30).</p>
-<p>Remote modules are historical link associations, not confirmed RF delivery. g2_link history includes DCS streams with a unique logged link association across retained logs. Suffixes preserve reported callsign suffixes. DPlus history is not assessed for g2_link remote streams. DPlus Unlinked does not establish overall disconnection.</p>
+<p>Associated Link shows source-labelled historical evidence at the transmission time, not the current module link. g2_link associations currently require a confirmed DCS request/announcement pair in retained logs; missing, unsupported or ambiguous evidence is Unknown. Both sources are shown for local activity, including any simultaneous links. Remote modules are link associations, not confirmed RF delivery. Suffixes preserve reported callsign suffixes. DPlus history is not assessed for g2_link remote streams. DPlus Unlinked does not establish overall disconnection.</p>
 <div class="table">
 <table>
 <thead>
@@ -262,7 +263,7 @@ if ($conf) {
 <th>Module / Link Association</th>
 <th>Activity</th>
 <th>Reported by</th>
-<th>Associated DPlus Link</th>
+<th>Associated Link</th>
 <th>Reported Connection</th>
 <th>Last Heard</th>
 <th>User Message</th>
@@ -302,7 +303,7 @@ if ($r['activity'] === 'Remote') {
 <td><?=htmlspecialchars($moduleDisplay)?></td>
 <td><?=htmlspecialchars($r['activity'])?></td>
 <td><?=htmlspecialchars($r['connection'])?></td>
-<td><?=htmlspecialchars($r['dplus_history'])?></td>
+<td><?=htmlspecialchars($r['associated_link'])?></td>
 <td><?=htmlspecialchars($r['via'])?></td>
 <td><?=htmlspecialchars(date('Y-m-d H:i:s', $r['epoch']))?></td>
 <td><?=htmlspecialchars($r['message'])?></td>

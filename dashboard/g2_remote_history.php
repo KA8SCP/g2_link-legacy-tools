@@ -4,7 +4,8 @@ require_once __DIR__ . '/g2_remote_headers.php';
 
 function g2RemoteHistoryRead($logfile)
 {
-    $result = array('records' => array(), 'excluded' => 0, 'error' => '');
+    $result = array('records' => array(), 'excluded' => 0, 'error' => '',
+        'link_history' => array('events'=>array(), 'first'=>null, 'last'=>null, 'ordered'=>true));
     $source = @fopen($logfile, 'r');
     $copy = tmpfile();
     if (!$source || !$copy) {
@@ -37,9 +38,26 @@ function g2RemoteHistoryRead($logfile)
     $state = array();
     $pending = array();
     $lineNumber = 0;
+    $epoch = null;
+    $previousState = array();
 
     while (($line = fgets($copy)) !== false) {
         $lineNumber++;
+        if (preg_match('/^(\d{6}) at (\d{2}:\d{2}:\d{2}):/', $line, $stamp)) {
+            $date = DateTime::createFromFormat('!mdy H:i:s', $stamp[1].' '.$stamp[2],
+                new DateTimeZone(dashboardConfig('timezone')));
+            $errors = DateTime::getLastErrors();
+            if ($date === false || ($errors !== false &&
+                ($errors['warning_count'] || $errors['error_count']))) {
+                $result['link_history']['ordered'] = false;
+            } else {
+                $nextEpoch = $date->getTimestamp();
+                if ($epoch !== null && $nextEpoch < $epoch) $result['link_history']['ordered'] = false;
+                $epoch = $nextEpoch;
+                if ($result['link_history']['first'] === null) $result['link_history']['first'] = $epoch;
+                $result['link_history']['last'] = $epoch;
+            }
+        }
         if (preg_match('/startup|starting|shutdown|timeout|timed out|disconnect/i', $line)) {
             $state = array();
             $pending = array();
@@ -84,6 +102,14 @@ function g2RemoteHistoryRead($logfile)
                 $state[$module] = $pending[$module];
             }
             unset($pending[$module]);
+        }
+
+        // Reuse the same confirmed state as remote stream association; no second log scan.
+        if ($state !== $previousState) {
+            if ($epoch !== null) {
+                $result['link_history']['events'][] = array('epoch'=>$epoch, 'state'=>$state);
+            }
+            $previousState = $state;
         }
 
         if (!isset($byLine[$lineNumber])) continue;
