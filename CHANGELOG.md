@@ -53,3 +53,9 @@
 - Restore expensive DPlus timeline enrichment to the visible 30 rows; keep lightweight hotspot/header classification before filtering. WB1GOF PHP 5.4 timed out with all-history enrichment; target performance confirmation pending.
 - Use a subshell instead of git -C for older CentOS 7 Git compatibility.
 
+
+## October 15 timeline lookup performance
+
+- Build a compact usable-snapshot index once per history session and use binary search for baseline selection. Preserve equal-time log order, coverage limits and transition uncertainty; fail closed on regressing index order.
+- Compute per-session coverage once per annotation pass instead of scanning snapshots per row. Add synthetic 12,500-snapshot regression cases. WB1GOF target timing remains pending.
+
