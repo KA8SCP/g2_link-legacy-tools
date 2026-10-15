@@ -59,3 +59,10 @@
 - Build a compact usable-snapshot index once per history session and use binary search for baseline selection. Preserve equal-time log order, coverage limits and transition uncertainty; fail closed on regressing index order.
 - Compute per-session coverage once per annotation pass instead of scanning snapshots per row. Add synthetic 12,500-snapshot regression cases. WB1GOF target timing remains pending.
 
+
+## October 15: unified historical link associations
+
+- Populated Associated Link from DPlus and confirmed g2_link DCS history at transmission time, with source labels and both associations retained when present.
+- Reused the existing g2_link log pass and indexed lookups for displayed rows only.
+- Added regression fixtures for local/remote DCS, simultaneous evidence, confirmation boundaries, unlink/restart, read errors and clock ambiguity.
+- XRF/XLX historical formats remain unqualified (Unknown); current module status is never substituted for historical evidence. Target display and performance verification remain pending.
