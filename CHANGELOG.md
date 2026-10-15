@@ -66,3 +66,9 @@
 - Reused the existing g2_link log pass and indexed lookups for displayed rows only.
 - Added regression fixtures for local/remote DCS, simultaneous evidence, confirmation boundaries, unlink/restart, read errors and clock ambiguity.
 - XRF/XLX historical formats remain unqualified (Unknown); current module status is never substituted for historical evidence. Target display and performance verification remain pending.
+## October 15: reduce repeated g2_link history processing
+
+- WB1GOF reported a 21.98-second g2_link history scan across eight sources and a 30-second PHP timeout during full-page rendering.
+- Validate all timestamps on the initial archive pass, reusing consecutive identical timestamp conversions. Carry only recognized state events, DCS headers and first/last coverage markers into subsequent scans.
+- Reuse the timezone object instead of creating it per log line. Keep clock-regression resets and fail-closed timestamp/read handling.
+- Added a 10,000-line diagnostic fixture, coverage-boundary checks, and regression/invalid timestamp checks on filtered lines. Target timing remains pending; no PHP timeout or gateway service changes.
