@@ -410,6 +410,23 @@ function dplusTimelineReconcile($transitions, $snapshots)
  * Build from one temporary copy of the log.
  * Fail closed when evidence cannot support time lookup.
  */
+function dplusTimelineSnapshotIndex($snapshots)
+{
+    $index = array('items'=>array(), 'first'=>null, 'last'=>null, 'ordered'=>true);
+    $previous = null;
+    foreach ($snapshots as $snapshot) {
+        if (!$snapshot['timeline_usable']) continue;
+        $upper = $snapshot['anchor']['upper_epoch'];
+        if ($previous !== null && $upper < $previous) $index['ordered'] = false;
+        if ($index['first'] === null) $index['first'] = $upper;
+        $index['last'] = $snapshot['anchor']['lower_epoch'];
+        $index['items'][] = array('upper'=>$upper, 'line_number'=>$snapshot['line_number'],
+            'gateways'=>$snapshot['gateways']);
+        $previous = $upper;
+    }
+    return $index;
+}
+
 function dplusTimelineBuild($logfile)
 {
     $result = array(
@@ -483,6 +500,8 @@ function dplusTimelineBuild($logfile)
         !$mismatch &&
         !empty($reconciliation['checks']);
 
+    $result['snapshot_index'] = dplusTimelineSnapshotIndex($result['snapshots']);
+
     return $result;
 }
 
@@ -515,29 +534,32 @@ function dplusTimelineLookup($timeline, $epoch, $module)
         return $unknown;
     }
 
-    $first = null;
-    $last = null;
-    $baseline = null;
-
-    foreach ($timeline['snapshots'] as $snapshot) {
-        if (!$snapshot['timeline_usable']) {
-            continue;
-        }
-        if ($first === null) {
-            $first = $snapshot;
-        }
-        $last = $snapshot;
-        if ($snapshot['anchor']['upper_epoch'] <= $epoch) {
-            $baseline = $snapshot;
-        }
+    $index = isset($timeline['snapshot_index']) ? $timeline['snapshot_index'] :
+        dplusTimelineSnapshotIndex($timeline['snapshots']);
+    if (!$index['ordered']) {
+        $unknown['reason'] = 'unsafe_snapshot_order';
+        return $unknown;
     }
-
-    if ($first === null || $baseline === null ||
-        $epoch < $first['anchor']['upper_epoch'] ||
-        $epoch > $last['anchor']['lower_epoch']) {
+    if ($index['first'] === null || $epoch < $index['first'] || $epoch > $index['last']) {
         $unknown['reason'] = 'outside_snapshot_coverage';
         return $unknown;
     }
+    // Last usable snapshot at or before the query, preserving equal-time log order.
+    $lo = 0; $hi = count($index['items']) - 1; $selected = -1;
+    while ($lo <= $hi) {
+        $mid = (int)floor(($lo + $hi) / 2);
+        if ($index['items'][$mid]['upper'] <= $epoch) {
+            $selected = $mid;
+            $lo = $mid + 1;
+        } else {
+            $hi = $mid - 1;
+        }
+    }
+    if ($selected < 0) {
+        $unknown['reason'] = 'outside_snapshot_coverage';
+        return $unknown;
+    }
+    $baseline = $index['items'][$selected];
 
     $state = null;
 

@@ -136,6 +136,13 @@ function dplusDashboardHistoryRead($logfile)
 
 function dplusDashboardHistoryAnnotate($history, $rows)
 {
+    // Coverage is invariant across the displayed activity rows.
+    $coverage = array();
+    foreach ($history['timelines'] as $id => $timeline) {
+        $index = isset($timeline['snapshot_index']) ? $timeline['snapshot_index'] :
+            dplusTimelineSnapshotIndex($timeline['snapshots']);
+        $coverage[$id] = array('first'=>$index['first'], 'last'=>$index['last']);
+    }
     if ($history['error'] === '' && isset($history['local_headers'])) {
         $rows = dplusLocalHeadersAnnotate($rows, $history['local_headers']);
     }
@@ -153,18 +160,9 @@ function dplusDashboardHistoryAnnotate($history, $rows)
                 $candidates[] = $row['history_session'];
             }
         } elseif (isset($row['epoch']) && is_numeric($row['epoch'])) {
-            foreach ($history['timelines'] as $id => $timeline) {
-                $first = null;
-                $last = null;
-                foreach ($timeline['snapshots'] as $snapshot) {
-                    if (!$snapshot['timeline_usable']) {
-                        continue;
-                    }
-                    if ($first === null) {
-                        $first = $snapshot['anchor']['upper_epoch'];
-                    }
-                    $last = $snapshot['anchor']['lower_epoch'];
-                }
+            foreach ($coverage as $id => $range) {
+                $first = $range['first'];
+                $last = $range['last'];
                 if ($first !== null &&
                     $row['epoch'] >= $first && $row['epoch'] <= $last) {
                     $candidates[] = $id;
