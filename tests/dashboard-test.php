@@ -27,6 +27,7 @@ function check($name, $ok) {
     echo ($ok ? 'PASS ' : 'FAIL ') . $name . "\n";
 }
 check('site callsign', dashboardConfig('callsign') === 'W4CRL');
+require __DIR__ . '/timeline-index-test.php';
 check('site timezone', dashboardConfig('timezone') === 'UTC');
 $local = "Remote client forward start streamid 67cb  2026/10/11 09:28:54.806\n" .
     "   rpt2 (W4CRL  G) rpt1 (W4CRL  C) urcall (       I) mycall (K1NR    /    )\n";
