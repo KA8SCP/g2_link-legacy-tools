@@ -36,6 +36,7 @@ function g2DashboardHistoryRead($logfile)
     $zone = new DateTimeZone(dashboardConfig('timezone'));
     $previousTime = null;
     $previousArchive = null;
+    $previousStamp = null;
 
     foreach ($result['sources'] as $path) {
         $suffix = substr($path, strlen($logfile) + 1);
@@ -53,13 +54,17 @@ function g2DashboardHistoryRead($logfile)
             $result['error'] = 'Cannot read g2_link source: ' . $path;
             break;
         }
+        $firstStamp = null;
+        $lastStamp = null;
         while (($line = fgets($fh)) !== false) {
             // Ignore an unfinished final line in a live log.
             if (substr($line, -1) !== "\n") break;
 
             if (preg_match('/^(\d{6}) at (\d{2}:\d{2}:\d{2}):/', $line, $m)) {
+                $stamp = $m[1] . ' ' . $m[2];
+                if ($stamp !== $previousStamp) {
                 $date = DateTime::createFromFormat(
-                    '!mdy H:i:s', $m[1] . ' ' . $m[2], $zone
+                    '!mdy H:i:s', $stamp, $zone
                 );
                 $errors = DateTime::getLastErrors();
                 if ($date === false ||
@@ -78,11 +83,33 @@ function g2DashboardHistoryRead($logfile)
                     }
                 }
                 $previousTime = $epoch;
+                $previousStamp = $stamp;
+                }
+                $lastStamp = $m[1] . ' at ' . $m[2];
+                if ($firstStamp === null) {
+                    $firstStamp = $lastStamp;
+                    $boundary = $firstStamp . ":history coverage boundary\n";
+                    if (fwrite($copy, $boundary) !== strlen($boundary)) {
+                        $result['error'] = 'Cannot write g2_link coverage boundary';
+                        break;
+                    }
+                }
             }
 
+            // Keep every state-changing pattern used by g2RemoteHistoryRead,
+            // plus DCS headers. Other lines have already had their timestamps
+            // checked above and need not be copied and scanned twice more.
+            if (!preg_match('/startup|starting|shutdown|timeout|timed out|disconnect|' .
+                'sending link request|Unlinking from|sending File:|START from dcs:/i', $line)) continue;
             if (fwrite($copy, $line) !== strlen($line)) {
                 $result['error'] = 'Cannot copy g2_link source';
                 break;
+            }
+        }
+        if ($result['error'] === '' && $lastStamp !== null) {
+            $boundary = $lastStamp . ":history coverage boundary\n";
+            if (fwrite($copy, $boundary) !== strlen($boundary)) {
+                $result['error'] = 'Cannot write g2_link coverage boundary';
             }
         }
         if ($result['error'] === '' && !feof($fh) &&
@@ -109,6 +136,7 @@ function g2DashboardHistoryRead($logfile)
     }
     $result['excluded'] = $history['excluded'];
     $result['link_history'] = $history['link_history'];
+    if ($result['clock_regressions']) $result['link_history']['ordered'] = false;
 
     $unique = array();
     $conflicts = array();

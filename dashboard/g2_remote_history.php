@@ -40,12 +40,13 @@ function g2RemoteHistoryRead($logfile)
     $lineNumber = 0;
     $epoch = null;
     $previousState = array();
+    $zone = new DateTimeZone(dashboardConfig('timezone'));
 
     while (($line = fgets($copy)) !== false) {
         $lineNumber++;
         if (preg_match('/^(\d{6}) at (\d{2}:\d{2}:\d{2}):/', $line, $stamp)) {
             $date = DateTime::createFromFormat('!mdy H:i:s', $stamp[1].' '.$stamp[2],
-                new DateTimeZone(dashboardConfig('timezone')));
+                $zone);
             $errors = DateTime::getLastErrors();
             if ($date === false || ($errors !== false &&
                 ($errors['warning_count'] || $errors['error_count']))) {
