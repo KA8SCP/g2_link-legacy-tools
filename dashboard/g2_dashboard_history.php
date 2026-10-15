@@ -54,6 +54,34 @@ function g2DashboardHistoryRead($logfile)
             $result['error'] = 'Cannot read g2_link source: ' . $path;
             break;
         }
+        // PHP 5.4 fgets() is very slow on multi-megabyte NUL-only lines.
+        // Normalize in bounded blocks before line parsing. A missing region
+        // invalidates link evidence; never join text across a NUL gap.
+        $normalized = tmpfile();
+        if (!$normalized) {
+            fclose($fh);
+            $result['error'] = 'Cannot create normalized g2_link source';
+            break;
+        }
+        while (!feof($fh)) {
+            $block = fread($fh, 65536);
+            if ($block === false || ($block === '' && !feof($fh))) {
+                $result['error'] = 'Cannot read g2_link source';
+                break;
+            }
+            $block = preg_replace('/\\x00+/', "\nstartup: NUL gap; clear link evidence\n", $block);
+            if ($block === null || fwrite($normalized, $block) !== strlen($block)) {
+                $result['error'] = 'Cannot normalize g2_link source';
+                break;
+            }
+        }
+        fclose($fh);
+        $fh = $normalized;
+        if ($result['error'] !== '') {
+            fclose($fh);
+            break;
+        }
+        rewind($fh);
         $firstStamp = null;
         $lastStamp = null;
         while (($line = fgets($fh)) !== false) {
