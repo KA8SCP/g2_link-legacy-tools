@@ -127,6 +127,23 @@ check('filtered noise still detects clock regression', $history['clock_regressio
 file_put_contents($g2log, "139926 at 12:00:20:ordinary packet diagnostic\n".$tx);
 $history = g2DashboardHistoryRead($g2log);
 check('invalid filtered timestamp fails closed', $history['error'] !== '');
+// Match WB1GOF: a sparse 12 MB NUL prefix followed by real log text.
+$sparse = fopen($g2log, 'w');
+fseek($sparse, 12 * 1024 * 1024);
+fwrite($sparse, $tx);
+fclose($sparse);
+$started = microtime(true);
+$history = g2DashboardHistoryRead($g2log);
+check('sparse prefix scan completes promptly', microtime(true)-$started < 5);
+check('sparse gap invalidates archived link evidence', $history['error'] === '' &&
+    count($history['records']) === 0 && g2DashboardLinkAt($history,$at,'C') === 'Unknown');
+file_put_contents($g2log, str_repeat("\0", 65530) . $link . $tx);
+$history = g2DashboardHistoryRead($g2log);
+check('fresh confirmation after gap recovers first text across block boundary',
+    $history['error'] === '' && count($history['records']) === 1);
+file_put_contents($g2log, $link . str_repeat("\0", 100) . $tx);
+$history = g2DashboardHistoryRead($g2log);
+check('internal NUL gap clears prior confirmation', $history['error'] === '' && count($history['records']) === 0);
 file_put_contents($g2log, $link . str_replace('sfx=NXDN','sfx=M17 ', $tx));
 $history = g2DashboardHistoryRead($g2log);
 check('M17 suffix retained', count($history['records']) === 1 && $history['records'][0]['suffix'] === 'M17');
