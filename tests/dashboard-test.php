@@ -113,6 +113,20 @@ check('unlink clears local association', g2DashboardLinkAt($history,$at-10,'C') 
 file_put_contents($g2log, "101126 at 12:00:30:sending link request from mod C to link with: [XRF001  ] mod A [192.0.2.1]\n".$tx);
 $history = g2DashboardHistoryRead($g2log);
 check('unsupported new request clears old DCS link', g2DashboardLinkAt($history,$at-10,'C') === 'Unknown');
+// Noise is checked for clock/coverage evidence but is not replayed as link data.
+file_put_contents($g2log, str_repeat("101126 at 12:00:20:ordinary packet diagnostic\n",10000) .
+    $tx . "101126 at 12:10:00:ordinary packet diagnostic\n");
+$history = g2DashboardHistoryRead($g2log);
+check('large irrelevant log preserves remote record', count($history['records']) === 1);
+check('filtered final timestamp preserves coverage', g2DashboardLinkAt($history,$at+120,'C') === 'DCS049 C');
+file_put_contents($g2log, "101126 at 12:00:20:ordinary packet diagnostic\n" .
+    "101126 at 11:59:20:ordinary packet diagnostic\n" . $tx);
+$history = g2DashboardHistoryRead($g2log);
+check('filtered noise still detects clock regression', $history['clock_regressions'] === 1 &&
+    g2DashboardLinkAt($history,$at-10,'C') === 'Unknown');
+file_put_contents($g2log, "139926 at 12:00:20:ordinary packet diagnostic\n".$tx);
+$history = g2DashboardHistoryRead($g2log);
+check('invalid filtered timestamp fails closed', $history['error'] !== '');
 file_put_contents($g2log, $link . str_replace('sfx=NXDN','sfx=M17 ', $tx));
 $history = g2DashboardHistoryRead($g2log);
 check('M17 suffix retained', count($history['records']) === 1 && $history['records'][0]['suffix'] === 'M17');
