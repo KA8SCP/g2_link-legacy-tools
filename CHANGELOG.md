@@ -72,3 +72,8 @@
 - Validate all timestamps on the initial archive pass, reusing consecutive identical timestamp conversions. Carry only recognized state events, DCS headers and first/last coverage markers into subsequent scans.
 - Reuse the timezone object instead of creating it per log line. Keep clock-regression resets and fail-closed timestamp/read handling.
 - Added a 10,000-line diagnostic fixture, coverage-boundary checks, and regression/invalid timestamp checks on filtered lines. Target timing remains pending; no PHP timeout or gateway service changes.
+## October 15: sparse g2_link log handling
+
+WB1GOF's active log had an apparent size of 12,468,196 bytes but only 4,096 allocated bytes, with six text records after a NUL-filled gap. The SysV launch command redirected output using > rather than >> while logrotate used copytruncate. The administrator changed the launch redirection to append, restarted g2_link, and verified append flags 0102001 on both output descriptors. QSO_DETAILS=Y and rotation settings were retained. Existing gaps were not removed.
+
+Dashboard history now normalizes NUL runs in 64 KiB blocks into explicit evidence-reset boundaries before line parsing. This avoids PHP 5.4 reading a multi-megabyte zero-filled line, preserves subsequent text, and prevents link associations from crossing missing data without fresh confirmation. Original logs remain read-only. Fixtures cover a 12 MiB sparse prefix, block-boundary recovery, and internal gaps. Actual WB1GOF page timing after installation remains pending.
