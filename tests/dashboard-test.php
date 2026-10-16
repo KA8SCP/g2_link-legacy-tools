@@ -27,6 +27,20 @@ function check($name, $ok) {
     echo ($ok ? 'PASS ' : 'FAIL ') . $name . "\n";
 }
 check('site callsign', dashboardConfig('callsign') === 'W4CRL');
+require __DIR__ . '/../scripts/read-dashboard-callsign.php';
+check('saved site callsign is upgrade default', dashboardSavedCallsign($fixture.'/dashboard.local.php') === 'W4CRL');
+check('new install has no invented default', dashboardSavedCallsign($fixture.'/absent.php') === '');
+$savedFixture = $fixture.'/saved-default.php';
+file_put_contents($savedFixture, '<?php return array("callsign" => "VE3TTT");');
+check('alternate gateway literal is read', dashboardSavedCallsign($savedFixture) === 'VE3TTT');
+file_put_contents($savedFixture, '<?php return array("callsign" => "BAD CALL");');
+check('invalid saved callsign is ignored', dashboardSavedCallsign($savedFixture) === '');
+file_put_contents($savedFixture, '<?php return array("callsign" => "W4CRL" . "X");');
+check('computed callsign is not treated as a literal', dashboardSavedCallsign($savedFixture) === '');
+file_put_contents($savedFixture, '<?php return array("callsign" => "W4CRL", "callsign" => "K2BWK");');
+check('duplicate defaults are rejected', dashboardSavedCallsign($savedFixture) === '');
+file_put_contents($savedFixture, '<?php file_put_contents('.var_export($fixture.'/executed',true).',"bad"); return array("callsign" => "WB1GOF");');
+check('saved config is never executed', dashboardSavedCallsign($savedFixture) === 'WB1GOF' && !file_exists($fixture.'/executed'));
 require __DIR__ . '/timeline-index-test.php';
 check('site timezone', dashboardConfig('timezone') === 'UTC');
 $local = "Remote client forward start streamid 67cb  2026/10/11 09:28:54.806\n" .
