@@ -87,3 +87,7 @@ This is a release candidate version identifier, not a claim that a GitHub tag or
 ## October 16: saved gateway callsign default
 
 Upgrade prompts now offer the valid saved callsign from the chosen dashboard directory. New sites require an explicit callsign. The existing PHP configuration is tokenized without execution, with tests for missing/invalid/duplicate values and executable content. Added docs/RELEASE-READINESS.md to distinguish reported three-site deployment results from outstanding transcript/footer and first-install qualification. Version remains 0.5.0-rc.1; no production gateway changes or stable tag are included.
+
+## October 16: CentOS transcript completion correction
+
+VE3TTT's first installation passed hashes and PHP 5.4 syntax but HTTP verification returned curl 52 (empty server reply), triggering rollback. The transcript exposed a separate Bash compatibility error when waiting for a process-substitution PID. Transcript capture now uses a private FIFO and an explicit background tee child, then waits and removes the FIFO directory. Tests assert clean completion and no leftover pipe directory. The Apache empty response remains under investigation; no retry or successful VE3TTT deployment is claimed.
