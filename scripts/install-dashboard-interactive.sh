@@ -5,11 +5,40 @@ umask 077
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 ask() {
     local answer
-    read -r -p "$2 [$3]: " answer
+    printf '%s [%s]: ' "$2" "$3" >&2
+    read -r answer
     printf -v "$1" '%s' "${answer:-$3}"
 }
-yes() { local answer; read -r -p "$1 [y/N]: " answer; [[ $answer == y || $answer == Y ]]; }
+yes() { local answer; printf '%s [y/N]: ' "$1" >&2; read -r answer; [[ $answer == y || $answer == Y ]]; }
 [[ ${EUID:-1} == 0 ]] || die 'Run as root on the gateway.'
+# Capture output before prerequisite checks; stdin stays on the terminal.
+for utility in tee mktemp install stat date; do
+    command -v "$utility" >/dev/null || die "Missing transcript prerequisite: $utility"
+done
+transcript_root=/var/log/g2-dashboard-install
+[[ ! -L $transcript_root ]] || die 'Transcript directory must not be a symlink.'
+if [[ ! -e $transcript_root ]]; then install -d -m 0700 -- "$transcript_root"; fi
+[[ -d $transcript_root && $(stat -c %u "$transcript_root") == 0 &&
+    $(stat -c %a "$transcript_root") == 700 ]] || die 'Transcript directory must be root-owned with mode 0700.'
+transcript=$(mktemp "$transcript_root/install-$(date -u +%Y%m%dT%H%M%SZ).XXXXXXXX.log")
+exec 3>&1 4>&2
+exec > >(tee -- "$transcript") 2>&1
+transcript_pid=$!
+work=''
+finish() {
+    local rc=$?
+    trap - EXIT
+    printf '\nInstaller finished at %s; exit status: %s\nTranscript: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$rc" "$transcript"
+    if [[ -n $work && -d $work && $work == /var/tmp/g2-dashboard-install.* ]]; then rm -rf -- "$work"; fi
+    exec 1>&3 2>&4 3>&- 4>&-
+    if ! wait "$transcript_pid"; then
+        printf 'ERROR: transcript capture failed: %s\n' "$transcript" >&2
+        if (( rc == 0 )); then rc=1; fi
+    fi
+    exit "$rc"
+}
+trap finish EXIT
+printf 'Installer started at %s\nTranscript: %s\nPrompts and output are recorded; typed responses are not echoed. Do not enter credentials.\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$transcript"
 # Qualify g2_link before checking dashboard-specific PHP/web prerequisites.
 # Paths are explicit because legacy installations need not put g2_link in PATH.
 default_g2_binary=$(command -v g2_link || true)
@@ -24,7 +53,7 @@ for utility in php git sha256sum tar install mktemp realpath getent curl stat; d
     command -v "$utility" >/dev/null || die "Missing prerequisite: $utility"
 done
 php -r 'exit(version_compare(PHP_VERSION,"5.4.0",">=") ? 0 : 1);' || die 'PHP CLI 5.4 or newer is required.'
-printf 'Unified D-STAR Dashboard v0.4.2 installation\n'
+printf 'Unified D-STAR Dashboard installation\n'
 printf 'Existing DPlus and working web PHP integration are required; PHP-FPM is not a universal Icom prerequisite.\n'
 printf 'This installs the dashboard only; gateway services and link settings stay unchanged.\n\n'
 package_dir=''
@@ -34,8 +63,6 @@ elif (( $# )); then
     die 'Usage: install-dashboard-interactive.sh [--package-dir /reviewed/package]'
 fi
 work=$(mktemp -d /var/tmp/g2-dashboard-install.XXXXXXXX)
-cleanup() { [[ -d $work && $work == /var/tmp/g2-dashboard-install.* ]] && rm -rf -- "$work"; }
-trap cleanup EXIT
 if [[ -z $package_dir ]]; then
     ask repo 'GitHub repository URL' 'https://github.com/KA8SCP/g2_link-legacy-tools.git'
     [[ $repo =~ ^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(\.git)?$ ]] || die 'Use a GitHub HTTPS repository URL without credentials.'
@@ -50,6 +77,8 @@ fi
 source_dir=$package_dir/dashboard
 [[ -f $source_dir/SHA256SUMS && -f $source_dir/dashboard_config.php ]] || die 'Repository does not contain the current portable dashboard release.'
 bash "$package_dir/scripts/verify-dashboard.sh"
+release_version=$(php -r 'require $argv[1]; echo DASHBOARD_VERSION;' "$source_dir/dashboard_release.php")
+printf 'Package version: %s\n' "$release_version"
 
 ask gateway 'Gateway callsign (without module; required)' ''
 gateway=${gateway^^}
@@ -131,6 +160,11 @@ $text="<?php\nreturn ".var_export($settings,true).";\n";
 if(file_put_contents($argv[1],$text)!==strlen($text)) exit(1);
 ' "$candidate/dashboard.local.php" "$gateway" "$timezone" "$document_root" "$dp_status" "$g2_status" "$dp_log" "$g2_log"
 php -l "$candidate/dashboard.local.php"
+php -r '
+$revision=preg_match("/^[0-9a-f]{40,64}$/",$argv[2]) ? $argv[2] : "";
+$data=json_encode(array("revision"=>$revision));
+if(file_put_contents($argv[1],$data)!==strlen($data)) exit(1);
+' "$candidate/dashboard-build.json" "$revision"
 php -r 'require $argv[1]."/dashboard_config.php"; date_default_timezone_set(dashboardConfig("timezone")); echo "Configuration: ",dashboardConfig("callsign"),"\n";' "$candidate"
 
 printf '\nReady to install %s at %s\nRepository: %s\nRef: %s\nCommit: %s\nVerification: %s\nBackup: %s\n' "$gateway" "$destination" "$repo" "$ref" "$revision" "$check_url" "$backup"
@@ -142,7 +176,7 @@ if [[ -d $destination ]]; then
 else
     printf 'New installation; no previous dashboard.\n' > "$backup_root/new-install-$stamp.txt"
 fi
-printf 'Repository: %s\nRef: %s\nCommit: %s\nDestination: %s\n' "$repo" "$ref" "$revision" "$destination" > "$backup_root/install-$stamp.txt"
+printf 'Repository: %s\nRef: %s\nCommit: %s\nVersion: %s\nDestination: %s\nTranscript: %s\n' "$repo" "$ref" "$revision" "$release_version" "$destination" "$transcript" > "$backup_root/install-$stamp.txt"
 cp -- "$source_dir/SHA256SUMS" "$backup_root/SHA256SUMS-$stamp"
 rollback() {
     trap - ERR
@@ -154,7 +188,7 @@ rollback() {
 trap 'rollback; exit 1' ERR
 install -d -o "$web_user" -g "$web_group" -m 0755 -- "$destination"
 # Dependencies and configuration first; entry point last.
-for file in "${files[@]}" dashboard.local.php; do
+for file in "${files[@]}" dashboard.local.php dashboard-build.json; do
     [[ $file == index.php ]] && continue
     install -o "$web_user" -g "$web_group" -m 0644 -- "$candidate/$file" "$destination/$file"
 done
