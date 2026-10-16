@@ -23,6 +23,8 @@ for expected in 0 7; do
     grep -q stdout-marker "$transcript"
     grep -q stderr-marker "$transcript"
     grep -q "exit status: $expected" "$transcript"
+    ! grep -q 'not a child\|transcript capture failed' "$fixture/console"
+    [[ -z $(find "$fixture/logs" -name '.pipe.*' -print) ]]
 done
 # Exercise the actual early prerequisite failure with logging already active.
 sed "s|transcript_root=/var/log/g2-dashboard-install|transcript_root=$fixture/logs|; s|\[\[ \${EUID:-1} == 0 \]\]|[[ 1 == 1 ]]|; s|== 0 \&\&|== $(id -u) \&\&|" \
