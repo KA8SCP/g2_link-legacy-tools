@@ -22,3 +22,7 @@ Portable-package checks, October 12: all PHP files pass PHP 8.4.26 CLI syntax ch
 
 On an isolated Linux test system, verify missing/non-executable g2_link, missing/empty status HTML and an alternate valid executable/status path. Failed cases must exit before PHP checks, Git downloads, backup creation and web deployment. For a qualifying case confirm subsequent PHP prerequisites are reached and the binary is never executed. Confirm no gateway or web service configuration changes. These new behavioral cases await Linux qualification; local Bash is unavailable in the Windows workspace.
 
+
+## 0.5.0-rc.1 qualification
+
+Automated checks now exercise transcript stdout/stderr, mode 0600, success/failure exit status and the actual early g2_link prerequisite failure in an isolated directory, plus footer version and invalid/missing build metadata. Before a stable release, confirm transcript capture on CentOS 7/Bash 4/PHP 5.4 and AlmaLinux, including cancellation, completed installation and HTTP rollback. Verify footer revision matches install records and no transcript is web-served. The administrator reported sparse-log dashboard upgrades on all three gateways and a fresh WB1GOF local RF association test; this does not complete every acceptance case above.
