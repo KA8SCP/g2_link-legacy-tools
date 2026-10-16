@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/dashboard_config.php';
+require_once __DIR__ . '/dashboard_release.php';
 date_default_timezone_set(dashboardConfig('timezone'));
 header('Content-Type: text/html; charset=UTF-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -314,4 +315,4 @@ if ($r['activity'] === 'Remote') {
 </tbody>
 </table>
 </div>
-<footer>Read-only prototype. DPlus and g2_link remain independent. Refreshes every 60 seconds.</footer></main></body></html>
+<footer>Unified D-STAR Dashboard v<?=htmlspecialchars(DASHBOARD_VERSION, ENT_QUOTES, 'UTF-8')?><?php $buildRevision = dashboardBuildRevision(); if ($buildRevision !== ''): ?> · revision <?=htmlspecialchars($buildRevision, ENT_QUOTES, 'UTF-8')?><?php endif; ?>. Read-only. DPlus and g2_link remain independent. Refreshes every 60 seconds.</footer></main></body></html>
