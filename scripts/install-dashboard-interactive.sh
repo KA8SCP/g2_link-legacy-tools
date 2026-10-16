@@ -80,11 +80,6 @@ bash "$package_dir/scripts/verify-dashboard.sh"
 release_version=$(php -r 'require $argv[1]; echo DASHBOARD_VERSION;' "$source_dir/dashboard_release.php")
 printf 'Package version: %s\n' "$release_version"
 
-ask gateway 'Gateway callsign (without module; required)' ''
-gateway=${gateway^^}
-[[ $gateway =~ ^[A-Z0-9]{3,7}$ ]] || die 'Invalid callsign.'
-ask timezone 'Gateway log timezone' 'America/New_York'
-php -r 'try {new DateTimeZone($argv[1]);} catch(Exception $e) {exit(1);}' "$timezone" || die 'Invalid timezone.'
 ask document_root 'Web document root' '/var/www/html'
 document_root=$(realpath -e -- "$document_root")
 [[ -d $document_root && $document_root != / && $document_root != *$'\n'* ]] || die 'Invalid document root.'
@@ -95,6 +90,13 @@ destination=$(realpath -m -- "$destination")
 [[ -d $(dirname -- "$destination") ]] || die 'Dashboard parent directory must exist.'
 [[ ! -e $destination || -d $destination ]] || die 'Destination is not a directory.'
 [[ $destination != *$'\n'* ]] || die 'Invalid destination.'
+default_gateway=$(php "$package_dir/scripts/read-dashboard-callsign.php" "$destination/dashboard.local.php")
+if [[ -n $default_gateway ]]; then printf 'Established dashboard callsign: %s\n' "$default_gateway"; fi
+ask gateway 'Gateway callsign (without module; required)' "$default_gateway"
+gateway=${gateway^^}
+[[ $gateway =~ ^[A-Z0-9]{3,7}$ ]] || die 'Invalid callsign.'
+ask timezone 'Gateway log timezone' 'America/New_York'
+php -r 'try {new DateTimeZone($argv[1]);} catch(Exception $e) {exit(1);}' "$timezone" || die 'Invalid timezone.'
 ask dp_status 'DPlus status HTML' '/dstar/tmp/status.html'
 
 ask dp_log 'DPlus log' '/var/log/dplus.log'
