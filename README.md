@@ -37,3 +37,7 @@ The separate MonLink review materials remain under their existing qualification/
 ## October 14 installation qualification
 
 K2BWK did not qualify: g2_link was not found and its status/log files were empty placeholders. Failed dashboard installs rolled back. The installer now makes g2_link qualification mandatory before dashboard PHP/web checks. The separate Nginx directory-index/PHP-backend issue remains unmodified; no production gateway or web services were changed by this repository update. See [installation notes](docs/INSTALL.md).
+
+## Release candidate diagnostics
+
+The current package identifies itself as **0.5.0-rc.1** in the dashboard footer. The updated interactive installer automatically saves private console transcripts under /var/log/g2-dashboard-install and records the installed source revision. Update the installer script itself to obtain transcript capture. See [installation instructions](docs/INSTALL.md). Stable release qualification remains pending; this version label does not create a GitHub release tag.
