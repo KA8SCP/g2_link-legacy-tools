@@ -12,7 +12,7 @@ ask() {
 yes() { local answer; printf '%s [y/N]: ' "$1" >&2; read -r answer; [[ $answer == y || $answer == Y ]]; }
 [[ ${EUID:-1} == 0 ]] || die 'Run as root on the gateway.'
 # Capture output before prerequisite checks; stdin stays on the terminal.
-for utility in tee mktemp install stat date; do
+for utility in tee mktemp mkfifo install stat date; do
     command -v "$utility" >/dev/null || die "Missing transcript prerequisite: $utility"
 done
 transcript_root=/var/log/g2-dashboard-install
@@ -22,8 +22,13 @@ if [[ ! -e $transcript_root ]]; then install -d -m 0700 -- "$transcript_root"; f
     $(stat -c %a "$transcript_root") == 700 ]] || die 'Transcript directory must be root-owned with mode 0700.'
 transcript=$(mktemp "$transcript_root/install-$(date -u +%Y%m%dT%H%M%SZ).XXXXXXXX.log")
 exec 3>&1 4>&2
-exec > >(tee -- "$transcript") 2>&1
+# An explicit background child can be waited for on CentOS 7's Bash 4.2;
+# process-substitution PIDs are not reliably waitable there.
+transcript_pipe_dir=$(mktemp -d "$transcript_root/.pipe.XXXXXXXX")
+mkfifo -- "$transcript_pipe_dir/output"
+tee -- "$transcript" < "$transcript_pipe_dir/output" &
 transcript_pid=$!
+exec > "$transcript_pipe_dir/output" 2>&1
 work=''
 finish() {
     local rc=$?
@@ -35,6 +40,8 @@ finish() {
         printf 'ERROR: transcript capture failed: %s\n' "$transcript" >&2
         if (( rc == 0 )); then rc=1; fi
     fi
+    rm -f -- "$transcript_pipe_dir/output"
+    rmdir -- "$transcript_pipe_dir"
     exit "$rc"
 }
 trap finish EXIT
