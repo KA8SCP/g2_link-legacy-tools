@@ -1,6 +1,6 @@
 # Updating an installed dashboard
 
-Version 0.5.0-rc.2 adds a dedicated updater and a visitor-controlled dark display.
+Version 0.5.0 is the stable release, including the configuration-preserving updater, dark display and clearer Local RF/Remote presentation.
 
 ## Get the current tools
 
@@ -32,10 +32,10 @@ Each run saves a private transcript under `/var/log/g2-dashboard-install/`. Befo
 
 ## Source selection and custom paths
 
-At publication time this repository has no GitHub Release entry or release tag. The default is explicitly `main`, the current published release-candidate code, not an implied latest stable release. The fetched source commit is recorded in the footer and installation record. Use `--ref TAG_OR_BRANCH` when selecting a reviewed tag/branch; do not assume a tag exists merely because a version appears in the footer.
+By default the updater requests the latest published stable GitHub Release, rejects draft/prerelease/malformed metadata, and clones its exact tag. Release discovery failure stops the update; it never silently falls back to development code. The fetched source commit is recorded in the footer and install record. Use --ref v0.5.0 to pin this release, or --ref main to explicitly select development code.
 
 ```bash
-bash scripts/update-dashboard.sh --directory /var/www/html/dashboard --ref main
+bash scripts/update-dashboard.sh --directory /var/www/html/dashboard --ref v0.5.0
 ```
 
 For a custom local virtual host or backup location:
@@ -61,4 +61,4 @@ The `Dark display` toggle appears in the page header. Off is the existing light 
 
 ## Qualification
 
-Automated tests cover saved setting parsing, cancellation, backup/rollback, preserving configuration and ownership, package deployment, invalid inputs and theme persistence/error handling. The updater's HTTP boundary is substituted in the isolated shell test; real Apache/nginx upgrade checks on CentOS/PHP 5.4 and AlmaLinux remain required. No production gateway was changed during development. See TESTING.md and RELEASE-READINESS.md for the broader qualification matrix.
+Automated tests cover saved setting parsing, cancellation, backup/rollback, preserving configuration and ownership, package deployment, invalid inputs and theme persistence/error handling. The updater's HTTP boundary is substituted in the isolated shell test; candidate upgrades were operator-confirmed on WB1GOF (CentOS/Apache) and W4CRL (AlmaLinux/nginx). These reports do not imply every fault case was exercised on each live site. No production gateway was changed during development. See TESTING.md and RELEASE-READINESS.md for the broader qualification matrix.

@@ -99,3 +99,7 @@ Added scripts/update-dashboard.sh with an existing-site mode in the interactive 
 ## October 27: 0.5.0-rc.3 Last Heard clarity
 
 Made activity filters larger with a visible selected state and added distinct Local RF/Remote row badges. A short explanation clarifies that remote reflector traffic can be heard on multiple linked gateways. Classification and history evidence rules are unchanged. Light/dark palettes and keyboard navigation remain supported. This is a presentation update; no gateway settings or live deployments were modified.
+
+## October 27: v0.5.0 stable production release
+
+Promoted the tested candidate dashboard to 0.5.0. Recorded operator results for WB1GOF and W4CRL updates, earlier K2BWK deployment and VE3TTT first installation, plus iPhone, Android tablet and PC display testing. Updated compatibility and qualification records without claiming every failure case was run on each live site. The updater now discovers the latest published stable GitHub Release and clones its tag; explicit --ref overrides remain available and discovery failure stops without a development fallback. First installation defaults to v0.5.0. Existing authorship/history, private transcripts, conservative Unknown link handling, backups/rollback and gateway independence are retained. External certificate updater resilience and legacy-platform maintenance remain documented operational limits.

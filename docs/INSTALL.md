@@ -18,7 +18,7 @@ This installs the dashboard on a gateway with an existing web server with workin
 5. Existing files are backed up outside the web tree. Dependencies/configuration are copied before index.php. Existing unrelated files are retained; release-file symlinks are refused. The installer restores SELinux labels, checks deployed hashes and fetches the page through the web server. Failed deployment verification reverts the dashboard and retains failure files for review.
 6. Perform RF and remote-transmission acceptance tests. An HTTP check verifies rendering, not complete radio behavior or every log format.
 
-No existing `/dashboard/` is needed for a fresh installation. For a v0.4 upgrade, use the existing destination and retain the reported rollback archive. The same configurable package is intended for W4CRL after its actual platform and input paths are verified.
+No existing `/dashboard/` is needed for a fresh installation. For a v0.4 upgrade, use the existing destination and retain the reported rollback archive. W4CRL candidate updates and VE3TTT first installation have since been confirmed; see RELEASE-READINESS.md for the exact evidence.
 
 ## Rollback
 
@@ -55,3 +55,7 @@ See RELEASE-READINESS.md for observed deployment results, VE3TTT preflight and r
 ## Existing dashboard upgrades (0.5.0-rc.2)
 
 Use scripts/update-dashboard.sh from a current tools checkout rather than re-entering site settings. It preserves the complete saved configuration and existing file owner/group. First installations continue to use the interactive installer. See [UPDATING.md](UPDATING.md). The header now offers a browser-local Dark display toggle.
+
+## Stable v0.5.0 release
+
+Use the v0.5.0 tag for reproducible first installation. The interactive installer offers that stable tag by default. Existing sites use update-dashboard.sh, which now selects the latest published stable GitHub Release unless an explicit --ref is supplied. See UPDATING.md and RELEASE-READINESS.md. Earlier candidate notes above are historical, not current qualification blockers.
