@@ -5,6 +5,10 @@ umask 077
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 ask() {
     local answer
+    if ${update_mode:-false}; then
+        printf '%s: %s\n' "$2" "${!1}" >&2
+        return
+    fi
     printf '%s [%s]: ' "$2" "$3" >&2
     read -r answer
     printf -v "$1" '%s' "${answer:-$3}"
@@ -46,12 +50,57 @@ finish() {
 }
 trap finish EXIT
 printf 'Installer started at %s\nTranscript: %s\nPrompts and output are recorded; typed responses are not echoed. Do not enter credentials.\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$transcript"
+# Parse options before prompts. Updates require an existing saved configuration.
+update_mode=false
+package_dir=''
+requested_destination=/var/www/html/dashboard
+repo=https://github.com/KA8SCP/g2_link-legacy-tools.git
+ref=main
+check_url=''
+backup_root=/var/backups/g2-dashboard
+while (( $# )); do
+    case $1 in
+        --update) update_mode=true; shift ;;
+        --directory|--ref|--check-url|--backup-root|--package-dir)
+            (( $# >= 2 )) || die "Missing value for $1"
+            case $1 in
+                --directory) requested_destination=$2 ;;
+                --ref) ref=$2 ;;
+                --check-url) check_url=$2 ;;
+                --backup-root) backup_root=$2 ;;
+                --package-dir) package_dir=$(realpath -e -- "$2") ;;
+            esac
+            shift 2 ;;
+        *) die 'Usage: install-dashboard-interactive.sh [--package-dir PATH] or update-dashboard.sh [--directory PATH] [--ref TAG_OR_BRANCH] [--check-url LOCAL_URL] [--backup-root PATH]' ;;
+    esac
+done
+work=$(mktemp -d /var/tmp/g2-dashboard-install.XXXXXXXX)
+if $update_mode; then
+    command -v php >/dev/null || die 'PHP CLI is required.'
+    [[ $requested_destination == /* && ! -L $requested_destination ]] || die 'Update directory must be absolute and not a symlink.'
+    destination=$(realpath -e -- "$requested_destination")
+    [[ -f $destination/index.php && -f $destination/dashboard.local.php && ! -L $destination/dashboard.local.php ]] || die 'No baseline dashboard/site configuration found; use the installer for a first installation.'
+    cp -- "$destination/dashboard.local.php" "$work/saved-dashboard.local.php"
+    script_root=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+    php "$script_root/read-dashboard-settings.php" "$work/saved-dashboard.local.php" > "$work/settings"
+    mapfile -t saved < "$work/settings"
+    (( ${#saved[@]} == 7 )) || die 'Incomplete saved settings.'
+    gateway=${saved[0]}; timezone=${saved[1]}; document_root=${saved[2]}
+    dp_status=${saved[3]}; g2_status=${saved[4]}; dp_log=${saved[5]}; g2_log=${saved[6]}
+    [[ $destination == "$document_root/"* && $document_root != / ]] || die 'Saved document root does not contain dashboard.'
+    web_user=$(stat -c %U "$destination/index.php")
+    web_group=$(stat -c %G "$destination/index.php")
+    if [[ -z $check_url ]]; then check_url="http://127.0.0.1${destination#"$document_root"}/"; fi
+    printf 'Update %s; preserving saved configuration and existing file ownership %s:%s.\nSource: %s (%s)\n' "$gateway" "$web_user" "$web_group" "$repo" "$ref"
+fi
 # Qualify g2_link before checking dashboard-specific PHP/web prerequisites.
 # Paths are explicit because legacy installations need not put g2_link in PATH.
+if ! $update_mode; then
 default_g2_binary=$(command -v g2_link || true)
 ask g2_binary 'Existing g2_link executable' "${default_g2_binary:-/dstar/tools/g2_link}"
 [[ $g2_binary == /* && $g2_binary != *$'\n'* && $g2_binary != *$'\r'* ]] || die 'g2_link executable path must be absolute.'
 [[ -f $g2_binary && -x $g2_binary ]] || die 'g2_link prerequisite missing: supply an installed executable before installing the unified dashboard.'
+fi
 ask g2_status 'Existing nonempty g2_link status HTML' '/var/www/html/fs.html'
 [[ $g2_status == /* && $g2_status != *$'\n'* && $g2_status != *$'\r'* ]] || die 'g2_link status path must be absolute.'
 [[ -f $g2_status && -s $g2_status && -r $g2_status ]] || die 'g2_link status feed is missing, empty or unreadable. Configure g2_link/status generation before installing the unified dashboard; empty placeholders do not qualify.'
@@ -63,23 +112,17 @@ php -r 'exit(version_compare(PHP_VERSION,"5.4.0",">=") ? 0 : 1);' || die 'PHP CL
 printf 'Unified D-STAR Dashboard installation\n'
 printf 'Existing DPlus and working web PHP integration are required; PHP-FPM is not a universal Icom prerequisite.\n'
 printf 'This installs the dashboard only; gateway services and link settings stay unchanged.\n\n'
-package_dir=''
-if [[ ${1:-} == --package-dir && $# == 2 ]]; then
-    package_dir=$(realpath -e -- "$2")
-elif (( $# )); then
-    die 'Usage: install-dashboard-interactive.sh [--package-dir /reviewed/package]'
-fi
-work=$(mktemp -d /var/tmp/g2-dashboard-install.XXXXXXXX)
 if [[ -z $package_dir ]]; then
     ask repo 'GitHub repository URL' 'https://github.com/KA8SCP/g2_link-legacy-tools.git'
     [[ $repo =~ ^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(\.git)?$ ]] || die 'Use a GitHub HTTPS repository URL without credentials.'
-    ask ref 'Release tag or branch (prefer a reviewed release tag)' 'main'
+    ask ref 'Release tag or branch (prefer a reviewed release tag)' "$ref"
     [[ $ref != -* && $ref != *$'\n'* && -n $ref ]] || die 'Invalid Git ref.'
     git clone --depth 1 --branch "$ref" -- "$repo" "$work/package"
     package_dir=$work/package
     revision=$(cd -- "$package_dir" && git rev-parse HEAD)
 else
     repo='local reviewed package'; ref='local'; revision='local package; see SHA256SUMS'
+    if [[ -d $package_dir/.git ]]; then revision=$(cd -- "$package_dir" && git rev-parse HEAD); fi
 fi
 source_dir=$package_dir/dashboard
 [[ -f $source_dir/SHA256SUMS && -f $source_dir/dashboard_config.php ]] || die 'Repository does not contain the current portable dashboard release.'
@@ -162,12 +205,17 @@ for file in "${files[@]}"; do
     [[ ! -L $destination/$file ]] || die "Existing deployment file is a symlink: $file"
 done
 [[ ! -L $destination/dashboard.local.php ]] || die 'Existing site configuration is a symlink.'
+[[ ! -L $destination/dashboard-build.json ]] || die 'Existing build metadata is a symlink.'
+if $update_mode; then
+    cp -- "$work/saved-dashboard.local.php" "$candidate/dashboard.local.php"
+else
 php -r '
 $keys=array("callsign","timezone","document_root","dplus_status","g2_status","dplus_log","g2_log");
 $settings=array(); foreach($keys as $i=>$key) $settings[$key]=$argv[$i+2];
 $text="<?php\nreturn ".var_export($settings,true).";\n";
 if(file_put_contents($argv[1],$text)!==strlen($text)) exit(1);
 ' "$candidate/dashboard.local.php" "$gateway" "$timezone" "$document_root" "$dp_status" "$g2_status" "$dp_log" "$g2_log"
+fi
 php -l "$candidate/dashboard.local.php"
 php -r '
 $revision=preg_match("/^[0-9a-f]{40,64}$/",$argv[2]) ? $argv[2] : "";
@@ -178,6 +226,9 @@ php -r 'require $argv[1]."/dashboard_config.php"; date_default_timezone_set(dash
 
 printf '\nReady to install %s at %s\nRepository: %s\nRef: %s\nCommit: %s\nVerification: %s\nBackup: %s\n' "$gateway" "$destination" "$repo" "$ref" "$revision" "$check_url" "$backup"
 yes 'Install this reviewed configuration?' || { echo 'Cancelled; dashboard unchanged.'; exit 0; }
+if $update_mode; then
+    cmp -s -- "$work/saved-dashboard.local.php" "$destination/dashboard.local.php" || die 'Saved settings changed during review; rerun the updater.'
+fi
 existed=false
 if [[ -d $destination ]]; then
     existed=true

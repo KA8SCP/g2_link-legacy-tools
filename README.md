@@ -41,3 +41,7 @@ K2BWK did not qualify: g2_link was not found and its status/log files were empty
 ## Release candidate diagnostics
 
 The current package identifies itself as **0.5.0-rc.1** in the dashboard footer. The updated interactive installer automatically saves private console transcripts under /var/log/g2-dashboard-install and records the installed source revision. Update the installer script itself to obtain transcript capture. See [installation instructions](docs/INSTALL.md). Stable release qualification remains pending; this version label does not create a GitHub release tag.
+
+## Updates and dark display (0.5.0-rc.2)
+
+Use `bash scripts/update-dashboard.sh` from an updated checkout to preserve saved site settings and installed ownership, review the source version/revision, back up and HTTP-verify an upgrade with automatic rollback on failure. The default source is main, the published release-candidate branch; no stable release/tag is implied. A Dark display toggle in the page header remembers each visitor's choice. See [the update guide](docs/UPDATING.md) for exact commands, custom paths, source selection and limitations.

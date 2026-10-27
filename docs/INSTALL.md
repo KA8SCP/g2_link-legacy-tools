@@ -51,3 +51,7 @@ The page footer identifies Unified D-STAR Dashboard v0.5.0-rc.1 and a shortened 
 With the updated installer, select the document root and dashboard directory before the callsign prompt. The installer reads the saved literal callsign from that directory's dashboard.local.php without executing its PHP code. Press Enter to retain it, or enter a different valid callsign. Missing, unreadable, invalid or duplicate values leave the default blank; a first installation such as VE3TTT requires an explicit callsign. Other configuration fields retain their existing prompt behavior. Update the installer itself and use the matching package to obtain this behavior.
 
 See RELEASE-READINESS.md for observed deployment results, VE3TTT preflight and remaining stable-release qualification. The new transcript/footer and saved-default changes still need target installation qualification.
+
+## Existing dashboard upgrades (0.5.0-rc.2)
+
+Use scripts/update-dashboard.sh from a current tools checkout rather than re-entering site settings. It preserves the complete saved configuration and existing file owner/group. First installations continue to use the interactive installer. See [UPDATING.md](UPDATING.md). The header now offers a browser-local Dark display toggle.

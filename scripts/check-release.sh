@@ -5,4 +5,6 @@ for script in "$root"/scripts/*.sh "$root/dashboard/install.sh"; do bash -n "$sc
 bash "$root/scripts/verify-dashboard.sh"
 php "$root/tests/dashboard-test.php"
 bash "$root/tests/installer-transcript-test.sh"
+bash "$root/tests/updater-test.sh"
+node "$root/tests/theme-test.js"
 echo 'Release syntax, hashes and isolated fixtures passed.'

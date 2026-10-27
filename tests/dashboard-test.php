@@ -27,6 +27,14 @@ function check($name, $ok) {
     echo ($ok ? 'PASS ' : 'FAIL ') . $name . "\n";
 }
 check('site callsign', dashboardConfig('callsign') === 'W4CRL');
+require __DIR__ . '/../scripts/read-dashboard-settings.php';
+$safeSettings=dashboardSavedSettings($fixture.'/dashboard.local.php');
+check('all update settings preserve custom site paths and timezone', $safeSettings === $settings);
+$unsafePath=$fixture.'/unsafe-settings.php';
+file_put_contents($unsafePath,'<?php file_put_contents('.var_export($fixture.'/unsafe-executed',true).',"bad"); return array();');
+$rejected=false;
+try { dashboardSavedSettings($unsafePath); } catch (Exception $e) { $rejected=true; }
+check('update parser rejects executable settings without executing', $rejected && !file_exists($fixture.'/unsafe-executed'));
 require __DIR__ . '/../scripts/read-dashboard-callsign.php';
 check('saved site callsign is upgrade default', dashboardSavedCallsign($fixture.'/dashboard.local.php') === 'W4CRL');
 check('new install has no invented default', dashboardSavedCallsign($fixture.'/absent.php') === '');
@@ -175,7 +183,8 @@ check('site title rendered', strpos($page, '<title>W4CRL D-STAR Gateway</title>'
 check('RF reference uses site callsign', strpos($page, 'Send commands on the W4CRL module') !== false);
 check('production tables and reference rendered', strpos($page,'Unified Last Heard') !== false && strpos($page,'RF Command Reference') !== false);
 check('unified associated link heading rendered', strpos($page,'<th>Associated Link</th>') !== false && strpos($page,'<th>Associated DPlus Link</th>') === false);
-check('package version appears in footer', strpos($page, 'Unified D-STAR Dashboard v0.5.0-rc.1') !== false);
+check('package version appears in footer', strpos($page, 'Unified D-STAR Dashboard v0.5.0-rc.2') !== false);
+check('theme toggle is rendered', strpos($page, 'id="theme-toggle"') !== false && strpos($page,'theme.js?v=0.5.0-rc.2') !== false);
 check('missing build metadata is allowed', dashboardBuildRevision() === '');
 file_put_contents($fixture.'/dashboard-build.json', json_encode(array('revision'=>str_repeat('a',40))));
 check('build revision is shortened', dashboardBuildRevision() === str_repeat('a',12));

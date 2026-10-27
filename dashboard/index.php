@@ -197,8 +197,8 @@ $mods = array_keys($gl);
 sort($mods);
 
 ?>
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="60"><title><?=htmlspecialchars($host)?> D-STAR Gateway</title><link rel="stylesheet" href="style.css"></head>
-<body><header><div class="wrap"><h1><?=htmlspecialchars($host)?> D-STAR Gateway</h1><p>Unified DPlus + g2_link Status</p></div></header><main class="wrap">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="60"><title><?=htmlspecialchars($host)?> D-STAR Gateway</title><script src="theme.js?v=<?=rawurlencode(DASHBOARD_VERSION)?>"></script><link rel="stylesheet" href="style.css?v=<?=rawurlencode(DASHBOARD_VERSION)?>"></head>
+<body><header><div class="wrap header-row"><div><h1><?=htmlspecialchars($host)?> D-STAR Gateway</h1><p>Unified DPlus + g2_link Status</p></div><button id="theme-toggle" type="button" aria-pressed="false" hidden>Dark display</button></div></header><main class="wrap">
 <h2>Module Status</h2><section class="grid">
 <?php foreach($mods as $m):$d=isset($dl[$m])?$dl[$m]:'N/A';$g=isset($gl[$m])?$gl[$m]:'N/A';$conf=linked($d)&&linked($g);?>
 <article class="card"><h3>Module <?=htmlspecialchars($m)?></h3><div class="kv"><b>DPlus</b><span><?=htmlspecialchars($d)?></span></div><div class="kv"><b>g2_link</b><span><?=htmlspecialchars($g)?></span></div>

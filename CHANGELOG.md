@@ -1,6 +1,6 @@
 # Changelog
 
-## Dashboard v0.4.2 portable package — 2026-10-12
+## Dashboard v0.4.2 portable package ï¿½ 2026-10-12
 
 - Imported the operator-verified WB1GOF production export (source archive hash in dashboard/README.md).
 - Added prompted GitHub/local-package install and v0.4 upgrade, preflight/configuration review, outside-web-root backups, deployed checksums, HTTP checks and automatic rollback on verification failure.
@@ -91,3 +91,7 @@ Upgrade prompts now offer the valid saved callsign from the chosen dashboard dir
 ## October 16: CentOS transcript completion correction
 
 VE3TTT's first installation passed hashes and PHP 5.4 syntax but HTTP verification returned curl 52 (empty server reply), triggering rollback. The transcript exposed a separate Bash compatibility error when waiting for a process-substitution PID. Transcript capture now uses a private FIFO and an explicit background tee child, then waits and removes the FIFO directory. Tests assert clean completion and no leftover pipe directory. The Apache empty response remains under investigation; no retry or successful VE3TTT deployment is claimed.
+
+## October 27: 0.5.0-rc.2 updater and dark display
+
+Added scripts/update-dashboard.sh with an existing-site mode in the interactive installer: strict nonexecuting saved-config parsing, byte-preserved settings, retained file ownership, single review confirmation, standard private transcript, backup and HTTP rollback. Custom destination/ref/verification/backup options are documented. The default source remains main because no GitHub release or tag is published. Added a keyboard-accessible Dark display toggle with local browser persistence, refresh/filter continuity, blocked-storage fallback, dark status/table colors and versioned asset URLs. PHP and theme tests plus isolated updater cancellation/rollback/deployment fixtures were added. Target CentOS/AlmaLinux updater qualification remains pending; production gateways were not modified.
