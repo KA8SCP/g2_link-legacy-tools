@@ -4,6 +4,8 @@ This installs the dashboard on a gateway with an existing web server with workin
 
 ## Prerequisites
 
+**New first-install prerequisite:** the current main-branch installer runs the offline [PHP2Shell package check](PHP-SECURITY.md) before downloading or deploying a dashboard. Obtain current reviewed main-branch tools for this check; historical/stable v0.5.0-tag installer commands below predate it. There is no security-check bypass. Known patched RPM builds are accepted, while unverified builds stop for administrator remediation. This does not automatically patch PHP or certify custom web runtimes.
+
 - Bash 4+, PHP CLI 5.4+ and working web PHP integration (Apache/PHP or Nginx with a configured PHP backend).
 - Git, curl, sha256sum, tar, install, mktemp, realpath, getent and normal coreutils.
 - An installed executable g2_link and readable, nonempty g2_link status HTML are mandatory. These are checked before PHP requirements, downloads, backups or deployment; there is no reduced-mode override. Existing DPlus inputs are also required as appropriate. Missing optional logs retain their explicit confirmation.

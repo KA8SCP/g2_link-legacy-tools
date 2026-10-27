@@ -9,10 +9,12 @@ The dashboard combines module status, connected clients and chronological activi
 DPlus and g2_link must already operate, with a nonempty readable g2_link status feed and working web PHP integration. PHP CLI 5.4+, Bash 4+, Git, curl and the utilities listed in [INSTALL.md](docs/INSTALL.md) are required. PHP-FPM is needed only where the site's web configuration uses it. The dashboard does not install or replace gateway applications, linking services or MonLink.
 
 ```bash
-git clone --branch v0.5.0 https://github.com/KA8SCP/g2_link-legacy-tools.git
+git clone --branch main https://github.com/KA8SCP/g2_link-legacy-tools.git
 cd g2_link-legacy-tools
 sudo bash scripts/install-dashboard-interactive.sh --package-dir "$PWD"
 ```
+
+Initial installations must pass the [PHP2Shell fixed-package prerequisite](docs/PHP-SECURITY.md). Use the current reviewed main-branch tools for this check; the immutable v0.5.0 installer predates it. Vulnerable, mixed or unrecognized PHP builds stop installation before deployment. The check does not patch PHP or restart services. The dashboard payload is still v0.5.0.
 
 Review the prompted paths, callsign, timezone, ownership and verification URL. Private transcripts, outside-web-root backups, checksums, PHP syntax checks and HTTP verification are included. Deployment/verification failure triggers rollback.
 

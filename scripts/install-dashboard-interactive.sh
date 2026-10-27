@@ -55,7 +55,7 @@ update_mode=false
 package_dir=''
 requested_destination=/var/www/html/dashboard
 repo=https://github.com/KA8SCP/g2_link-legacy-tools.git
-ref=main
+ref=v0.5.0
 check_url=''
 backup_root=/var/backups/g2-dashboard
 while (( $# )); do
@@ -109,6 +109,12 @@ for utility in php git sha256sum tar install mktemp realpath getent curl stat; d
     command -v "$utility" >/dev/null || die "Missing prerequisite: $utility"
 done
 php -r 'exit(version_compare(PHP_VERSION,"5.4.0",">=") ? 0 : 1);' || die 'PHP CLI 5.4 or newer is required.'
+# Initial-install PHP security gate
+if ! $update_mode; then
+    security_scripts=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+    bash "$security_scripts/check-php-security.sh" || die 'Initial installation stopped: PHP2Shell security prerequisite failed. No dashboard was deployed. Patch/qualify the web PHP runtime first; see docs/PHP-SECURITY.md.'
+fi
+# End initial-install PHP security gate
 printf 'Unified D-STAR Dashboard installation\n'
 printf 'Existing DPlus and working web PHP integration are required; PHP-FPM is not a universal Icom prerequisite.\n'
 printf 'This installs the dashboard only; gateway services and link settings stay unchanged.\n\n'
@@ -116,6 +122,13 @@ if [[ -z $package_dir ]]; then
     ask repo 'GitHub repository URL' 'https://github.com/KA8SCP/g2_link-legacy-tools.git'
     [[ $repo =~ ^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(\.git)?$ ]] || die 'Use a GitHub HTTPS repository URL without credentials.'
     ask ref 'Release tag or branch (prefer a reviewed release tag)' "$ref"
+    if [[ $ref == latest ]]; then
+        curl --fail --silent --show-error --connect-timeout 15 --max-time 30 \
+            https://api.github.com/repos/KA8SCP/g2_link-legacy-tools/releases/latest > "$work/release.json"
+        tool_scripts=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+        ref=$(php "$tool_scripts/read-release-tag.php" "$work/release.json")
+        printf 'Selected published stable release: %s\n' "$ref"
+    fi
     [[ $ref != -* && $ref != *$'\n'* && -n $ref ]] || die 'Invalid Git ref.'
     git clone --depth 1 --branch "$ref" -- "$repo" "$work/package"
     package_dir=$work/package
