@@ -1,6 +1,6 @@
 # Dashboard 0.5.0 release readiness
 
-Current package identity: 0.5.0-rc.1. No stable release/tag is claimed.
+Current package identity: 0.5.0-rc.2. No stable release/tag is claimed.
 
 ## Observed gateway results
 
@@ -23,3 +23,7 @@ Current package identity: 0.5.0-rc.1. No stable release/tag is claimed.
 - WB1GOF's ten-second page build is functional but remains a performance improvement opportunity.
 
 Promote to a stable 0.5.0 release only after recording the remaining relevant acceptance results. A footer version is a package identifier; it does not itself publish a GitHub tag or release.
+
+## October 27 updater and theme qualification
+
+The 0.5.0-rc.2 updater/theme changes have isolated automated coverage and local browser preview checks. Real CentOS 7/PHP 5.4 and AlmaLinux updater verification remains pending. Prior first-install and activity results do not qualify this new updater. See UPDATING.md for source selection and preserved settings.
