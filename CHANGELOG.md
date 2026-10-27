@@ -95,3 +95,7 @@ VE3TTT's first installation passed hashes and PHP 5.4 syntax but HTTP verificati
 ## October 27: 0.5.0-rc.2 updater and dark display
 
 Added scripts/update-dashboard.sh with an existing-site mode in the interactive installer: strict nonexecuting saved-config parsing, byte-preserved settings, retained file ownership, single review confirmation, standard private transcript, backup and HTTP rollback. Custom destination/ref/verification/backup options are documented. The default source remains main because no GitHub release or tag is published. Added a keyboard-accessible Dark display toggle with local browser persistence, refresh/filter continuity, blocked-storage fallback, dark status/table colors and versioned asset URLs. PHP and theme tests plus isolated updater cancellation/rollback/deployment fixtures were added. Target CentOS/AlmaLinux updater qualification remains pending; production gateways were not modified.
+
+## October 27: 0.5.0-rc.3 Last Heard clarity
+
+Made activity filters larger with a visible selected state and added distinct Local RF/Remote row badges. A short explanation clarifies that remote reflector traffic can be heard on multiple linked gateways. Classification and history evidence rules are unchanged. Light/dark palettes and keyboard navigation remain supported. This is a presentation update; no gateway settings or live deployments were modified.

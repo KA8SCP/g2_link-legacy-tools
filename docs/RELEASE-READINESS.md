@@ -1,6 +1,6 @@
 # Dashboard 0.5.0 release readiness
 
-Current package identity: 0.5.0-rc.2. No stable release/tag is claimed.
+Current package identity: 0.5.0-rc.3. No stable release/tag is claimed.
 
 ## Observed gateway results
 

@@ -183,8 +183,10 @@ check('site title rendered', strpos($page, '<title>W4CRL D-STAR Gateway</title>'
 check('RF reference uses site callsign', strpos($page, 'Send commands on the W4CRL module') !== false);
 check('production tables and reference rendered', strpos($page,'Unified Last Heard') !== false && strpos($page,'RF Command Reference') !== false);
 check('unified associated link heading rendered', strpos($page,'<th>Associated Link</th>') !== false && strpos($page,'<th>Associated DPlus Link</th>') === false);
-check('package version appears in footer', strpos($page, 'Unified D-STAR Dashboard v0.5.0-rc.2') !== false);
-check('theme toggle is rendered', strpos($page, 'id="theme-toggle"') !== false && strpos($page,'theme.js?v=0.5.0-rc.2') !== false);
+check('package version appears in footer', strpos($page, 'Unified D-STAR Dashboard v0.5.0-rc.3') !== false);
+check('theme toggle is rendered', strpos($page, 'id="theme-toggle"') !== false && strpos($page,'theme.js?v=0.5.0-rc.3') !== false);
+check('prominent filters retain accessible selected state', strpos($page,'class="activity-filters"') !== false && strpos($page,'aria-current="page"') !== false);
+check('shared reflector traffic is explained', strpos($page,'The same reflector traffic can appear on multiple gateways linked to that reflector.') !== false);
 check('missing build metadata is allowed', dashboardBuildRevision() === '');
 file_put_contents($fixture.'/dashboard-build.json', json_encode(array('revision'=>str_repeat('a',40))));
 check('build revision is shortened', dashboardBuildRevision() === str_repeat('a',12));
