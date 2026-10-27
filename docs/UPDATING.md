@@ -1,6 +1,6 @@
 # Updating an installed dashboard
 
-Version 0.5.0 is the stable release, including the configuration-preserving updater, dark display and clearer Local RF/Remote presentation.
+Version 0.5.1 is the stable maintenance release, retaining the configuration-preserving updater, dark display and clearer Local RF/Remote presentation. Its new PHP2Shell prerequisite applies to first installations; updating an existing dashboard does not patch or certify PHP. See [release notes](releases/v0.5.1.md).
 
 ## Get the current tools
 
@@ -32,10 +32,10 @@ Each run saves a private transcript under `/var/log/g2-dashboard-install/`. Befo
 
 ## Source selection and custom paths
 
-By default the updater requests the latest published stable GitHub Release, rejects draft/prerelease/malformed metadata, and clones its exact tag. Release discovery failure stops the update; it never silently falls back to development code. The fetched source commit is recorded in the footer and install record. Use --ref v0.5.0 to pin this release, or --ref main to explicitly select development code.
+By default the updater requests the latest published stable GitHub Release, rejects draft/prerelease/malformed metadata, and clones its exact tag. Release discovery failure stops the update; it never silently falls back to development code. The fetched source commit is recorded in the footer and install record. Use --ref v0.5.1 to pin this release, or --ref main to explicitly select development code.
 
 ```bash
-bash scripts/update-dashboard.sh --directory /var/www/html/dashboard --ref v0.5.0
+bash scripts/update-dashboard.sh --directory /var/www/html/dashboard --ref v0.5.1
 ```
 
 For a custom local virtual host or backup location:

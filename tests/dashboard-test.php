@@ -183,11 +183,11 @@ check('site title rendered', strpos($page, '<title>W4CRL D-STAR Gateway</title>'
 check('RF reference uses site callsign', strpos($page, 'Send commands on the W4CRL module') !== false);
 check('production tables and reference rendered', strpos($page,'Unified Last Heard') !== false && strpos($page,'RF Command Reference') !== false);
 check('unified associated link heading rendered', strpos($page,'<th>Associated Link</th>') !== false && strpos($page,'<th>Associated DPlus Link</th>') === false);
-check('package version appears in footer', strpos($page, 'Unified D-STAR Dashboard v0.5.0') !== false);
-check('theme toggle is rendered', strpos($page, 'id="theme-toggle"') !== false && strpos($page,'theme.js?v=0.5.0"') !== false);
+check('package version appears in footer', strpos($page, 'Unified D-STAR Dashboard v0.5.1') !== false);
+check('theme toggle is rendered', strpos($page, 'id="theme-toggle"') !== false && strpos($page,'theme.js?v=0.5.1"') !== false);
 require __DIR__ . '/../scripts/read-release-tag.php';
-$stableRelease=array('tag_name'=>'v0.5.0','draft'=>false,'prerelease'=>false,'published_at'=>'2026-10-27T00:00:00Z');
-check('published stable tag is selected',dashboardStableReleaseTag(json_encode($stableRelease)) === 'v0.5.0');
+$stableRelease=array('tag_name'=>'v0.5.1','draft'=>false,'prerelease'=>false,'published_at'=>'2026-10-27T00:00:00Z');
+check('published stable tag is selected',dashboardStableReleaseTag(json_encode($stableRelease)) === 'v0.5.1');
 foreach (array('draft','prerelease','tag_name','published_at') as $invalidField) {
     $invalid=$stableRelease;
     $invalid[$invalidField]=in_array($invalidField,array('draft','prerelease'),true) ? true : '';

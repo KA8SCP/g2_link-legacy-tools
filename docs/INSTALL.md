@@ -4,7 +4,7 @@ This installs the dashboard on a gateway with an existing web server with workin
 
 ## Prerequisites
 
-**New first-install prerequisite:** the current main-branch installer runs the offline [PHP2Shell package check](PHP-SECURITY.md) before downloading or deploying a dashboard. Obtain current reviewed main-branch tools for this check; historical/stable v0.5.0-tag installer commands below predate it. There is no security-check bypass. Known patched RPM builds are accepted, while unverified builds stop for administrator remediation. This does not automatically patch PHP or certify custom web runtimes.
+**v0.5.1 first-install prerequisite:** use the v0.5.1 release installer, which runs the offline [PHP2Shell package check](PHP-SECURITY.md) before downloading or deploying a dashboard. Historical v0.5.0-tag commands below predate this check. There is no bypass. Known patched RPM builds are accepted, while unverified builds stop for administrator remediation. This does not automatically patch PHP or certify custom web runtimes. Follow the current commands in README.md and [v0.5.1 release notes](releases/v0.5.1.md).
 
 - Bash 4+, PHP CLI 5.4+ and working web PHP integration (Apache/PHP or Nginx with a configured PHP backend).
 - Git, curl, sha256sum, tar, install, mktemp, realpath, getent and normal coreutils.

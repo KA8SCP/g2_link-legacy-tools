@@ -1,6 +1,6 @@
 <?php
 /* Package identity, independent of site configuration. PHP 5.4 compatible. */
-define('DASHBOARD_VERSION', '0.5.0');
+define('DASHBOARD_VERSION', '0.5.1');
 function dashboardBuildRevision()
 {
     $path = __DIR__ . '/dashboard-build.json';

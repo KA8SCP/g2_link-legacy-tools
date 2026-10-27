@@ -1,8 +1,8 @@
 # PHP2Shell prerequisite for first installations
 
-The current main-branch installer checks for fixes to CVE-2026-109618 and CVE-2026-109619 after the existing g2_link prerequisites and before downloading/staging/deploying a dashboard. A rejected check is recorded in the private installer transcript. No dashboard files are installed, although transcript and temporary working files are created. There is no bypass switch.
+Starting with v0.5.1, the installer checks for fixes to CVE-2026-109618 and CVE-2026-109619 after the existing g2_link prerequisites and before downloading/staging/deploying a dashboard. A rejected check is recorded in the private installer transcript. No dashboard files are installed, although transcript and temporary working files are created. There is no bypass switch.
 
-Use a fresh, reviewed main-branch tools checkout for this check. The immutable v0.5.0 release installer predates it; downloading that tag does not obtain the new gate. Dashboard payload version remains v0.5.0. Existing-dashboard updates are outside this initial-install gate and do not certify PHP security.
+Use the v0.5.1 release tools or a newer reviewed checkout for this check. The immutable v0.5.0 release installer predates it; downloading that tag does not obtain the new gate. Existing-dashboard updates are outside this initial-install gate and do not certify PHP security. Updating the dashboard never patches the PHP runtime.
 
 ## What is checked
 
