@@ -12,9 +12,84 @@ This installs the dashboard on a gateway with an existing web server with workin
 - An installed executable g2_link and readable, nonempty g2_link status HTML are mandatory. These are checked before PHP requirements, downloads, backups or deployment; there is no reduced-mode override. Existing DPlus inputs are also required as appropriate. Missing optional logs retain their explicit confirmation.
 - The correct PHP worker user/group and readable source paths. Unix permissions are checked with `runuser` when available. HTTP verification additionally checks the actual PHP/web deployment. SELinux stays enabled; `restorecon` is used when available.
 
+## Web-runtime readiness before installation
+
+Perform this administrator step after installing or updating PHP, including the PHP2Shell fixed packages, and before running the dashboard installer. Package checks and `php -l` do not prove that the running web server executes PHP.
+
+A restart briefly interrupts the affected web/PHP service and may affect other hosted applications. Choose a suitable maintenance window. Identify the existing handler and actual service/configuration names first; do not restart unrelated services or add PHP-FPM to a mod_php installation. A healthy dashboard-only installation or update does not require a routine restart. The dashboard installer does not perform these restarts automatically.
+
+### Apache with mod_php
+
+On the documented CentOS/AlmaLinux `httpd` layout, validate configuration, then fully restart Apache after a PHP module installation/update:
+
+```bash
+sudo httpd -t && sudo systemctl restart httpd
+sudo systemctl --no-pager -l status httpd
+sudo tail -n 30 /var/log/httpd/error_log
+```
+
+Do not substitute `systemctl reload httpd` for this post-PHP-update full service restart. Inspect for new errors or worker crashes after the restart; old log entries alone do not indicate a new failure. If validation or restart fails, stop and repair the web runtime before dashboard installation.
+
+### Nginx (or Apache) with PHP-FPM
+
+Identify the PHP-FPM instance/socket that actually serves the dashboard virtual host. For a standard system `php-fpm` installation, validate its configuration and restart that instance after updating PHP:
+
+```bash
+sudo php-fpm -t && sudo systemctl restart php-fpm
+sudo systemctl --no-pager -l status php-fpm
+```
+
+Use the matching binary, configuration and unit for a versioned/custom instance; do not assume the service is named `php-fpm`. Restarting Nginx alone does not replace PHP-FPM workers. For Nginx, also validate its configuration with `sudo nginx -t`. Reload Nginx only if its configuration changed (`sudo nginx -t && sudo systemctl reload nginx`); use the site's maintenance procedure for an Nginx package update. Apply the same PHP-FPM distinction if Apache proxies PHP requests instead of loading mod_php.
+
+### Confirm execution through the actual web route
+
+Before dashboard deployment, run the following in a root Bash shell. Set `document_root` and `web_origin` to the document root and local HTTP origin of the intended site. If the site's route depends on a hostname, use its actual host and loopback mapping (for example curl's `--resolve`); HTTPS also requires the correct hostname/SNI and trusted certificate. Do not bypass certificate verification or access restrictions. Verify the real dashboard route again after installation.
+
+This probe publishes only a random-name PHP file that prints a harmless token, not `phpinfo()`, credentials or dashboard configuration. It removes the probe and private response file on exit. Do not interrupt the shell with SIGKILL; if cleanup fails, remove the reported probe manually before proceeding.
+
+```bash
+(
+set -euo pipefail
+umask 077
+document_root=/var/www/html
+web_origin=http://127.0.0.1
+[[ $EUID == 0 && -d "$document_root" && "$document_root" != / ]] || exit 1
+probe=''
+response=''
+cleanup() {
+    [[ -z "$probe" ]] || rm -f -- "$probe"
+    [[ -z "$response" ]] || rm -f -- "$response"
+}
+trap cleanup EXIT
+response=$(mktemp /var/tmp/dashboard-php-response.XXXXXXXX)
+probe=$(mktemp --suffix=.php "$document_root/dashboard-php-check.XXXXXXXX")
+printf 'Temporary probe: %s\n' "$probe"
+expected="dashboard-php-ok-$(date +%s)-$"
+printf '<?php header("Content-Type: text/plain"); echo "%s";\n' "$expected" > "$probe"
+chmod 0644 "$probe"
+if command -v restorecon >/dev/null; then restorecon "$probe"; fi
+status=$(curl --silent --show-error --max-time 30 \
+    --output "$response" --write-out '%{http_code}' \
+    "${web_origin%/}/${probe##*/}")
+[[ $status == 200 && $(cat "$response") == "$expected" ]] || {
+    echo 'FAIL: HTTP PHP execution not verified; do not deploy the dashboard.' >&2
+    exit 1
+}
+echo 'PASS: HTTP 200 and exact PHP-generated token; probe removed on exit.'
+)
+```
+
+HTTP 200 by itself is insufficient: directory listings, PHP source and unrelated pages must fail the exact-token comparison. A successful probe shows execution on that route at that time, not security qualification or complete gateway behavior. If source is returned, keep dashboard files outside the web root and investigate the handler/runtime before retrying. After this check passes, continue with the installer, retain the PHP package prerequisite and final dashboard HTTP verification, and perform the RF/remote acceptance tests.
+
+### WL7CWI observed result — October 30, 2026
+
+The v0.5.1 package prerequisite and CLI rendering passed, but HTTP returned raw PHP and the installer rolled back. A graceful Apache reload was followed by worker segmentation faults. After a full Apache service restart, the sampled HTTP response rendered the dashboard correctly with no new crashes in the supplied log; installation then completed with HTTP verification and exit status 0. These operator results support checking the running web runtime after PHP updates. They do not diagnose a defect in the PHP2Shell patch or guarantee that restarting resolves every PHP/web failure.
+
+References: [Apache service control](https://httpd.apache.org/docs/2.4/stopping.html), [Nginx configuration reload behavior](https://nginx.org/en/docs/control.html), and [PHP-FPM configuration](https://www.php.net/manual/en/install.fpm.configuration.php).
+
 ## Procedure
 
-1. Clone the GitHub repository and review the package/ref.
+1. Complete [web-runtime readiness](#web-runtime-readiness-before-installation), including the appropriate post-PHP-update restart and HTTP execution test. Then clone the GitHub repository and review the package/ref.
 2. Run `sudo bash scripts/install-dashboard-interactive.sh`, or `sudo bash scripts/install-dashboard-interactive.sh --package-dir "$PWD"` for the reviewed local checkout.
 3. Enter callsign (without module), log timezone, document root, destination, DPlus/g2_link HTML and log paths, web user/group, local HTTP URL and backup location. Paths can differ from WB1GOF's defaults. The verification URL must point to this site's web virtual host; adjust its loopback port where necessary.
 4. Review the concrete installation summary and approve installation. The installer verifies all release hashes and PHP syntax and validates the generated configuration before this final prompt.
