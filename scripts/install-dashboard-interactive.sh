@@ -96,8 +96,7 @@ fi
 # Qualify g2_link before checking dashboard-specific PHP/web prerequisites.
 # Paths are explicit because legacy installations need not put g2_link in PATH.
 if ! $update_mode; then
-default_g2_binary=$(command -v g2_link || true)
-ask g2_binary 'Existing g2_link executable' "${default_g2_binary:-/dstar/tools/g2_link}"
+ask g2_binary 'Existing g2_link executable' '/root/g2_link/g2_link'
 [[ $g2_binary == /* && $g2_binary != *$'\n'* && $g2_binary != *$'\r'* ]] || die 'g2_link executable path must be absolute.'
 [[ -f $g2_binary && -x $g2_binary ]] || die 'g2_link prerequisite missing: supply an installed executable before installing the unified dashboard.'
 fi
