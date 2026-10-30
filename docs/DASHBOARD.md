@@ -63,3 +63,26 @@ streams, their RPT1/RPT2 values and local B link association. The active-log
 filter also preserves these records before parsing. Existing DCS tests remain
 required. This candidate is not a stable release and needs gateway HTTP/activity
 acceptance; installing it changes dashboard files only.
+
+## Remote-client expiry correction (0.5.2-rc.2)
+
+WB1GOF's legacy log records an inbound client expiry as
+`call=1NFO     timeout, removing 10.0.0.2, users=0`. This removes an
+inbound client, not the DCS reflector link. The previous generic timeout reset
+mistakenly discarded confirmed reflector history, hiding subsequent DCS activity.
+
+The candidate exempts only this exact timestamped client-expiry diagnostic from
+the link-state reset. Reflector TIMEOUT, unlink, unknown timeout, disconnect,
+restart and log-gap handling remain conservative. Expiry cannot create a link
+association or restore one already invalidated.
+
+The pinned legacy source emits this diagnostic while erasing an entry from
+`inbound_list`; reflector heartbeat expiry separately logs
+`Unlinked from [...] mod ..., TIMEOUT...`.
+See [legacy source](https://github.com/KA8SCP/g2_link/blob/7d22f6f566c863cd6154b198817e47eece9080e5/g2_link.cpp#L1049).
+WB1GOF target-site acceptance remains pending.
+
+The operator identifies `1NFO` as a synthetic query identity normally masked
+from displayed output. It is not a radio user or a reflector disconnect. This
+correction recognizes the inbound-client expiry event type, rather than hiding
+all lines containing that callsign or ignoring every timeout.
