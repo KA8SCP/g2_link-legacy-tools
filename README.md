@@ -8,6 +8,8 @@ The dashboard combines module status, connected clients and chronological activi
 
 DPlus and g2_link must already operate, with a nonempty readable g2_link status feed and working web PHP integration. PHP CLI 5.4+, Bash 4+, Git, curl and the utilities listed in [INSTALL.md](docs/INSTALL.md) are required. PHP-FPM is needed only where the site's web configuration uses it. The dashboard does not install or replace gateway applications, linking services or MonLink.
 
+After installing or updating PHP, complete the [web-runtime readiness steps](docs/INSTALL.md#web-runtime-readiness-before-installation) before running the installer: validate configuration, fully restart Apache/mod_php or the matching PHP-FPM service as appropriate, and verify PHP execution over HTTP. Restarts briefly interrupt web/PHP access and are administrator actions; routine dashboard-only updates do not automatically restart services.
+
 ```bash
 git clone --branch v0.5.1 https://github.com/KA8SCP/g2_link-legacy-tools.git
 cd g2_link-legacy-tools
