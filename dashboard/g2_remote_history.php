@@ -59,7 +59,15 @@ function g2RemoteHistoryRead($logfile)
                 $result['link_history']['last'] = $epoch;
             }
         }
-        if (preg_match('/startup|starting|shutdown|timeout|timed out|disconnect/i', $line)) {
+        // inbound_list client expiry is not a reflector unlink. Preserve
+        // confirmed link evidence for this exact legacy diagnostic only;
+        // genuine/unknown timeout, disconnect and restart events still reset it.
+        $clientExpiry = preg_match(
+            '/^\d{6} at \d{2}:\d{2}:\d{2}:call=[^,\r\n]+ timeout, removing [0-9.]+, users=\d+\s*$/',
+            $line
+        );
+        if (!$clientExpiry &&
+            preg_match('/startup|starting|shutdown|timeout|timed out|disconnect/i', $line)) {
             $state = array();
             $pending = array();
         }
