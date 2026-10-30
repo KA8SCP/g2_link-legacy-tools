@@ -8,6 +8,7 @@ This installs the dashboard on a gateway with an existing web server with workin
 
 - Bash 4+, PHP CLI 5.4+ and working web PHP integration (Apache/PHP or Nginx with a configured PHP backend).
 - Git, curl, sha256sum, tar, install, mktemp, realpath, getent and normal coreutils.
+- The executable prompt defaults to `/root/g2_link/g2_link`. Press Enter for that installation layout, or supply the absolute path to the installed executable if it differs. This is a prerequisite check only: the installer does not execute, relocate or change permissions on g2_link.
 - An installed executable g2_link and readable, nonempty g2_link status HTML are mandatory. These are checked before PHP requirements, downloads, backups or deployment; there is no reduced-mode override. Existing DPlus inputs are also required as appropriate. Missing optional logs retain their explicit confirmation.
 - The correct PHP worker user/group and readable source paths. Unix permissions are checked with `runuser` when available. HTTP verification additionally checks the actual PHP/web deployment. SELinux stays enabled; `restorecon` is used when available.
 
