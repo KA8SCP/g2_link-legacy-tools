@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.2-rc.2 — inbound-client timeout correction, 2026-10-30
+
+- Preserve confirmed reflector history when a separately tracked inbound client expires. Fixes WB1GOF DCS activity disappearing after 1NFO client timeouts.
+- Keep real reflector/unknown timeouts, disconnects, unlinks, restarts and log gaps invalidating stale evidence.
+- Add WB1GOF DCS and XRF client-expiry, retained-archive and negative fixtures. Live WB1GOF acceptance pending; rc.1 XRF display was confirmed at WL7CWI.
+
+
 ## 0.5.2-rc.1 — XRF activity correction, 2026-10-30
 
 - Parse XRF/DExtra remote-g2 stream headers, including flags and callsign suffixes.
