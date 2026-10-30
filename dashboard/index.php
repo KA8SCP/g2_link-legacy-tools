@@ -256,7 +256,7 @@ if ($conf) {
 </nav>
 <p class="activity-help"><strong>Local RF</strong> means activity reported from this gateway's local repeater. <strong>Remote</strong> means incoming network activity, including reflector traffic and connected hotspots. The same reflector traffic can appear on multiple gateways linked to that reflector.</p>
 <p>Showing <?=count($unifiedDisplay)?> of <?=count($filteredActivity)?> records (maximum 30).</p>
-<p>Associated Link shows source-labelled historical evidence at the transmission time, not the current module link. g2_link associations currently require a confirmed DCS request/announcement pair in retained logs; missing, unsupported or ambiguous evidence is Unknown. Both sources are shown for local activity, including any simultaneous links. Remote modules are link associations, not confirmed RF delivery. Suffixes preserve reported callsign suffixes. DPlus history is not assessed for g2_link remote streams. DPlus Unlinked does not establish overall disconnection.</p>
+<p>Associated Link shows source-labelled historical evidence at the transmission time, not the current module link. g2_link associations currently require a confirmed DCS or XRF/DExtra request/announcement pair in retained logs; missing, unsupported or ambiguous evidence is Unknown. Both sources are shown for local activity, including any simultaneous links. Remote modules are link associations, not confirmed RF delivery. Suffixes preserve reported callsign suffixes. DPlus history is not assessed for g2_link remote streams. DPlus Unlinked does not establish overall disconnection.</p>
 <div class="table">
 <table>
 <thead>
