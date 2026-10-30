@@ -85,3 +85,55 @@ check('XRF duplicate stream records are not displayed twice',
 // Leave an isolated XRF page fixture for the existing end-to-end render test.
 unlink($g2log . '-20261011');
 file_put_contents($g2log, $xrfLink . $xrfTx);
+
+// WB1GOF: inbound client 1NFO expired while the DCS049 C link stayed up.
+$expiryLog = $fixture . '/client-expiry.log';
+$dcsExpiryLink = "102926 at 00:00:01:sending link request from mod C to link with: [DCS049  ] mod C [54.237.10.173]\n" .
+    "102926 at 00:00:04:sending File:[/root/g2_link/linked.dat], mod:[C], RADIO_ID=[LINKED DCS049 C     ]\n";
+$clientExpiry = "102926 at 01:24:53:call=1NFO     timeout, removing 10.0.0.2, users=0\n";
+$dcsExpiryTx = "103026 at 13:53:05:START from dcs: streamID=101,80, my=KA8SCP  , sfx=DMR , ur=CQCQCQ  , rpt1=DCS049 C, rpt2=XLX978 G, 100 bytes fromIP=54.237.10.173, source=DCS049 C\n" .
+    "103026 at 14:30:01:START from dcs: streamID=191,57, my=W1KFR   , sfx=DPLS, ur=CQCQCQ  , rpt1=DCS049 C, rpt2=KB1SBJ G, 100 bytes fromIP=54.237.10.173, source=DCS049 C\n";
+file_put_contents($expiryLog, $dcsExpiryLink . $clientExpiry . $dcsExpiryTx);
+$expiryHistory = g2DashboardHistoryRead($expiryLog);
+check('WB1GOF client timeout does not erase confirmed DCS history',
+    $expiryHistory['error'] === '' && count($expiryHistory['records']) === 2 &&
+    $expiryHistory['excluded'] === 0);
+check('WB1GOF DCS historical association survives client expiry',
+    g2DashboardLinkAt($expiryHistory, strtotime('2026-10-30 13:53:05'), 'C') === 'DCS049 C');
+check('DCS ingress headers and suffix retained after unrelated expiry',
+    count($expiryHistory['records']) === 2 &&
+    $expiryHistory['records'][0]['rpt2'] === 'XLX978 G' &&
+    $expiryHistory['records'][0]['suffix'] === 'DMR' &&
+    $expiryHistory['records'][0]['rf_delivery'] === 'unconfirmed');
+foreach (array(
+    "102926 at 01:24:53:Unlinked from [DCS049  ] mod C, TIMEOUT...\n",
+    "102926 at 01:24:53:Unlinking from [DCS049  ] mod C\n",
+    "102926 at 01:24:53:unknown transport timeout\n",
+    "102926 at 01:24:53:call=1NFO     timeout, removing 10.0.0.2, users=invalid\n",
+    "102926 at 01:24:53:disconnect\n",
+    "102926 at 01:24:53:startup\n"
+) as $reset) {
+    file_put_contents($expiryLog, $dcsExpiryLink . $reset . $dcsExpiryTx);
+    $case = g2DashboardHistoryRead($expiryLog);
+    check('real or unqualified reset still clears DCS history: ' . trim(substr($reset, 19)),
+        count($case['records']) === 0);
+}
+file_put_contents($expiryLog, $clientExpiry . $dcsExpiryTx);
+$case = g2DashboardHistoryRead($expiryLog);
+check('client expiry cannot create a missing DCS association', count($case['records']) === 0);
+file_put_contents($expiryLog . '-20261030', $dcsExpiryLink . $clientExpiry);
+file_put_contents($expiryLog, $dcsExpiryTx);
+$case = g2DashboardHistoryRead($expiryLog);
+check('DCS client-expiry correction survives retained archive boundary',
+    count($case['records']) === 2 && $case['excluded'] === 0);
+file_put_contents($xrfLog, $xrfLink .
+    "103026 at 12:00:00:call=1NFO     timeout, removing 10.0.0.2, users=0\n" . $xrfTx);
+unlink($xrfLog . '-20261030');
+$case = g2DashboardHistoryRead($xrfLog);
+check('unrelated client expiry also preserves confirmed XRF history', count($case['records']) === 2);
+file_put_contents($expiryLog, $dcsExpiryLink .
+    "102926 at 01:24:53:Unlinked from [DCS049  ] mod C, TIMEOUT...\n" .
+    "102926 at 01:24:54:call=1NFO     timeout, removing 10.0.0.2, users=0\n" . $dcsExpiryTx);
+unlink($expiryLog . '-20261030');
+$case = g2DashboardHistoryRead($expiryLog);
+check('client expiry never restores evidence cleared by real link timeout', count($case['records']) === 0);
