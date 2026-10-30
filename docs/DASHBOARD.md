@@ -33,23 +33,33 @@ Normalize whitespace consistently for logged and HTML MYCALL matching while reta
 # Historical Associated Link column
 
 The unified Last Heard column combines source-labelled DPlus history and confirmed
-g2_link DCS associations at each transmission's timestamp. For example,
+g2_link DCS and XRF/DExtra associations at each transmission's timestamp. For example,
 `DPlus: Unlinked; g2_link: DCS049 C` means DPlus was unlinked while g2_link has
 positive historical evidence for DCS049 C. Simultaneous positive associations are
 both retained; the display does not silently prefer one source.
 
-g2_link local associations reuse the remote-history parser's matching DCS link
+g2_link local associations reuse the remote-history parser's matching DCS or XRF/DExtra link
 request and linked announcement, with the local module preserved. Requests,
 unlink announcements, restarts, timeouts and retained-log boundaries clear old
 evidence. The lookup requires the whole one-second activity window to be within
 retained timestamp coverage and away from a state change. Clock regressions,
 read errors, missing confirmation and unsupported protocol evidence stay Unknown.
-XRF/XLX link history is not inferred from the current status page; additional
-verified event formats are required before those historical associations can be
-populated. This does not change the current Module Status display.
+XRF/DExtra history accepts the observed request(dextra), linked announcement and
+START from remote g2 formats. Source reflector/module and IP must uniquely match
+the retained request/announcement pair. Incoming RPT headers do not establish RF
+delivery. XLX and other unsupported link history remain Unknown; the current
+status page is never used to invent a historical association. This does not change the current Module Status display.
 
 Remote g2_link rows use their existing uniquely confirmed source/IP/module
 association. DPlus history is not applied to those streams. History collection
 uses the existing g2_link log pass, and only the maximum 30 visible rows receive
 the added indexed lookup. No gateway configuration or linking commands change.
 
+
+## XRF activity correction (0.5.2-rc.1)
+
+The WL7CWI XRF405 A fixture now retains KA8SCP/52AP and VE6NS/ID52 remote
+streams, their RPT1/RPT2 values and local B link association. The active-log
+filter also preserves these records before parsing. Existing DCS tests remain
+required. This candidate is not a stable release and needs gateway HTTP/activity
+acceptance; installing it changes dashboard files only.
