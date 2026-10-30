@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.2-rc.1 — XRF activity correction, 2026-10-30
+
+- Parse XRF/DExtra remote-g2 stream headers, including flags and callsign suffixes.
+- Preserve these events in retained-log filtering and confirm XRF request/announcement source-IP associations.
+- Add WL7CWI regression fixtures, mismatch/reset/ambiguity and rendered-page checks. RF delivery remains unconfirmed.
+- Candidate only; target-gateway validation pending. Stable v0.5.1 remains unchanged.
+
+
 ## Dashboard v0.4.2 portable package � 2026-10-12
 
 - Imported the operator-verified WB1GOF production export (source archive hash in dashboard/README.md).
