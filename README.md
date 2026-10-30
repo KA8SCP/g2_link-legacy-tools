@@ -16,6 +16,8 @@ sudo bash scripts/install-dashboard-interactive.sh --package-dir "$PWD"
 
 Starting with v0.5.1, initial installations must pass the [PHP2Shell fixed-package prerequisite](docs/PHP-SECURITY.md). Vulnerable, mixed or unrecognized PHP builds stop installation before deployment. The check does not patch PHP or restart services. The older v0.5.0 installer does not contain this prerequisite. See the [v0.5.1 release notes](docs/releases/v0.5.1.md).
 
+The current installer defaults the g2_link executable prompt to `/root/g2_link/g2_link`; enter another absolute path if your installation differs. The published v0.5.1 tag retains the earlier prompt default, so enter `/root/g2_link/g2_link` explicitly when using that tagged installer.
+
 Review the prompted paths, callsign, timezone, ownership and verification URL. Private transcripts, outside-web-root backups, checksums, PHP syntax checks and HTTP verification are included. Deployment/verification failure triggers rollback.
 
 ## Update an installed dashboard
