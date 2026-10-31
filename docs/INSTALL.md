@@ -87,6 +87,64 @@ The v0.5.1 package prerequisite and CLI rendering passed, but HTTP returned raw 
 
 References: [Apache service control](https://httpd.apache.org/docs/2.4/stopping.html), [Nginx configuration reload behavior](https://nginx.org/en/docs/control.html), and [PHP-FPM configuration](https://www.php.net/manual/en/install.fpm.configuration.php).
 
+## g2_link activity logging and history retention
+
+Before activity acceptance, verify the configuration actually used by the running
+g2_link process. Detailed remote activity requires:
+
+```ini
+QSO_DETAILS=Y
+```
+
+The inspected legacy source guards both `START from remote g2:` (XRF/DExtra)
+and `START from dcs:` records with this setting. A current link can appear in
+Module Status while those detailed activity records are absent. Setting this to
+Y enables future records after the running process adopts the setting; it cannot
+reconstruct transmissions that were never logged. Editing the file alone does
+not prove that the existing process has reloaded it. Do not restart blindly:
+first preserve the log and inspect the launcher/rotation setup.
+
+Verify that stdout/stderr reach the configured dashboard log and that service
+startup preserves existing history. For a shell launcher, `>> /var/log/g2_link.log
+2>&1` appends whereas a single `>` can truncate at startup. Removing redirection
+entirely can send output elsewhere. A native systemd unit needs its own output
+configuration; `>` or `>>` in ExecStart is not shell redirection unless an
+explicit shell is used. Inspect the real unit and any invoked script rather than
+applying a CentOS init-script edit to every AlmaLinux installation.
+
+Read-only inventory examples (the service name may differ):
+
+```bash
+pgrep -af '[g]2_link'
+systemctl --no-pager cat g2_link.service
+grep -n 'QSO_DETAILS' /root/g2_link/g2_link.cfg
+```
+
+If the unit invokes `/etc/rc.d/init.d/g2_link` or another wrapper, inspect that
+file before editing. Confirm the process's open log destination as well as its
+startup append mode. Open descriptors can still target a renamed/deleted file
+after rotation even when the configured pathname exists.
+
+Rotation must remain locally administered and bounded: enabling QSO_DETAILS
+increases log volume. Preserve supported uncompressed `g2_link.log-YYYYMMDD`
+archives and the active log. WB1GOF uses copytruncate; do not apply that rule to
+another gateway without reviewing its existing rotation and file-opening
+behavior. Append mode avoids sparse-hole problems when a long-running writer
+continues after copytruncate. Do not truncate a live log or restart a gateway
+merely as an installation check.
+
+After configuration is active, generate a known transmission and verify that a
+new detailed record appears in the intended log, is readable by the PHP worker,
+and appears on the dashboard with retained link evidence. Keep
+`ADMIN=1NFO` and `ONLY_ADMIN_LOGIN=Y` where configured for the existing dashboard
+identity; do not remove or relax them to address logging. The dashboard installer
+does not edit g2_link configuration, launchers or rotation policies.
+
+Source evidence: [legacy QSO_DETAILS guards](https://github.com/KA8SCP/g2_link/blob/7d22f6f566c863cd6154b198817e47eece9080e5/g2_link.cpp#L3804)
+and [DCS guard](https://github.com/KA8SCP/g2_link/blob/7d22f6f566c863cd6154b198817e47eece9080e5/g2_link.cpp#L5590).
+These are source-level findings; verify the deployed executable and actual
+configuration at each site.
+
 ## Procedure
 
 1. Complete [web-runtime readiness](#web-runtime-readiness-before-installation), including the appropriate post-PHP-update restart and HTTP execution test. Then clone the GitHub repository and review the package/ref.
