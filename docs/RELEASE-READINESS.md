@@ -70,3 +70,17 @@ tracking.
 ## v0.5.2 fresh-install gate
 
 The complete Linux CI release suite passes for the new readiness tools, including rejection of raw PHP, wrong content, 403/502, redirects, network failures and CLI/web version mismatch, plus cleanup and legacy-file preservation. These automated cases use isolated boundaries. Separately, an operator-reported CentOS 7/Apache fresh installation passed the executed-PHP preflight and final HTTP deployment check. The gate leaves existing index.php files untouched and does not substitute for final deployed HTTP/RF checks. The reported fresh-install result includes PC/mobile browser acceptance but does not qualify every platform or replace transmission and legacy-page continuity checks.
+
+## Post-v0.5.2 installation lessons
+
+The current-tools improvement adds preflight-only operation, specific readiness
+failure messages, an explicit PHP entry-point URL default, a separate directory
+URL warning and an operator acceptance checklist. The v0.5.2 tag/release is
+unchanged. New isolated regression cases cover capability/directory/source/error
+distinctions, fresh and existing preflight-only cleanup, no deployment backups,
+preserved site/legacy files and nonfatal short-URL failure.
+
+Keep the existing first-install result scoped: CentOS 7/Apache web readiness,
+deployment and PC/mobile browser acceptance were reported. Do not infer
+RF/remote activity or legacy-page continuity from browser acceptance. Live
+acceptance of preflight-only mode and other web stacks remains pending.

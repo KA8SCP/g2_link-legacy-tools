@@ -20,7 +20,20 @@ done
 [[ $url == http://127.0.0.1/dashboard/ || $url == http://127.0.0.1/dashboard/index.php ]] || exit 9
 case ${READINESS_TEST_MODE:-execute} in
     execute) php "$READINESS_TEST_ENTRY" > "$response"; printf 200 ;;
-    mismatch) php "$READINESS_TEST_ENTRY" | sed 's/|[^|]*$/|0.0.0/'; printf 200 ;;
+    mismatch) php "$READINESS_TEST_ENTRY" | sed 's/|[^|]*$/|0.0.0/' > "$response"; printf 200 ;;
+    listing) printf '<title>Index of /dashboard</title>' > "$response"; printf 200 ;;
+    capability|temporary|date|version)
+        token=$(sed -n 's/^<?php \$probeToken = "\(.*\)";$/\1/p' "$READINESS_TEST_ENTRY")
+        case $READINESS_TEST_MODE in
+            capability) printf '%s|FAIL|capability|json_decode' "$token" > "$response" ;;
+            temporary) printf '%s|FAIL|temporary|tmpfile' "$token" > "$response" ;;
+            date) printf '%s|FAIL|date|DateTime/DateTimeZone' "$token" > "$response" ;;
+            version) printf '%s|FAIL|version|5.3.0' "$token" > "$response" ;;
+        esac
+        printf 200 ;;
+    directory_forbidden)
+        if [[ $url == */index.php ]]; then php "$READINESS_TEST_ENTRY" > "$response"; printf 200
+        else : > "$response"; printf 403; fi ;;
     source) cat "$READINESS_TEST_ENTRY" > "$response"; printf 200 ;;
     wrong) printf '<html>Other site</html>' > "$response"; printf 200 ;;
     forbidden) : > "$response"; printf 403 ;;
@@ -38,10 +51,26 @@ args=("$fixture/html" "$fixture/html/dashboard" http://127.0.0.1/dashboard/index
 bash "$root/scripts/check-web-readiness.sh" "${args[@]}" > "$fixture/pass" 2>&1
 grep -q 'Web readiness passed' "$fixture/pass"
 [[ ! -e $fixture/html/dashboard ]]
-for mode in source wrong forbidden gateway redirect fail mismatch; do
+for mode in source listing wrong forbidden gateway redirect fail mismatch capability temporary date version; do
     if READINESS_TEST_MODE=$mode bash "$root/scripts/check-web-readiness.sh" "${args[@]}" > "$fixture/$mode" 2>&1; then exit 1; fi
     [[ ! -e $fixture/html/dashboard ]]
 done
+
+grep -q 'Raw PHP source returned' "$fixture/source"
+grep -q 'Directory listing returned' "$fixture/listing"
+grep -q 'Unexpected page/content' "$fixture/wrong"
+grep -q 'HTTP 403' "$fixture/forbidden"
+grep -q 'backend unavailable' "$fixture/gateway"
+grep -q 'redirected' "$fixture/redirect"
+grep -q 'CLI/web PHP version mismatch' "$fixture/mismatch"
+grep -q 'missing or disabled: json_decode' "$fixture/capability"
+grep -q 'cannot create temporary files' "$fixture/temporary"
+grep -q 'date support is missing' "$fixture/date"
+grep -q 'older than required' "$fixture/version"
+READINESS_TEST_MODE=directory_forbidden bash "$root/scripts/check-web-readiness.sh" "${args[@]}" > "$fixture/directory-warning" 2>&1
+grep -q 'direct index.php works' "$fixture/directory-warning"
+[[ ! -e $fixture/html/dashboard ]]
+
 mkdir "$fixture/html/dashboard"
 printf 'retain this unrelated asset' > "$fixture/html/dashboard/keep.txt"
 args[2]=http://127.0.0.1/dashboard/

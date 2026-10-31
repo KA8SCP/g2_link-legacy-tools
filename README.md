@@ -28,6 +28,27 @@ The v0.5.2 tools also perform a [fresh-site web-readiness check](docs/INSTALL.md
 
 Review the prompted paths, callsign, timezone, ownership and verification URL. Private transcripts, outside-web-root backups, checksums, PHP syntax checks and HTTP verification are included. Deployment/verification failure triggers rollback.
 
+## Check a site without installing (current tools)
+
+The current `main` tools add a preflight-only mode; the v0.5.2 tagged installer
+does not contain this later option:
+
+```bash
+sudo bash scripts/install-dashboard-interactive.sh --preflight-only --package-dir "$PWD"
+```
+
+Review the prompts and authorize the temporary check. It writes a private
+transcript, may download/stage a reviewed package, and may briefly create a
+token-only PHP entry point at a fresh target. It cleans temporary files without
+installing/updating dashboard files or creating deployment backups. Existing
+index.php files are preserved and are not freshly probed. Services and gateway
+configuration are unchanged. See [preflight limits](docs/INSTALL.md#preflight-only-mode-current-tools).
+
+The default local verification URL is now the explicit `/dashboard/index.php`;
+the short `/dashboard/` URL is checked separately and reports a directory-index
+warning if the direct entry point works. A final acceptance checklist separates
+browser display, timezone, radio activity, legacy pages and HTTPS.
+
 ## Update an installed dashboard
 
 From a current, reviewed tools checkout:
