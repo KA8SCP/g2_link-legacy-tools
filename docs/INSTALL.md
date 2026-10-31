@@ -208,3 +208,46 @@ Use scripts/update-dashboard.sh from a current tools checkout rather than re-ent
 ## Stable v0.5.0 release
 
 Use the v0.5.0 tag for reproducible first installation. The interactive installer offers that stable tag by default. Existing sites use update-dashboard.sh, which now selects the latest published stable GitHub Release unless an explicit --ref is supplied. See UPDATING.md and RELEASE-READINESS.md. Earlier candidate notes above are historical, not current qualification blockers.
+
+## Automatic fresh-site web readiness
+
+The current tools checkout adds an application check distinct from the PHP2Shell
+package prerequisite. After you approve the reviewed installation, but before
+dashboard PHP, site configuration or backup/deployment files are copied, a
+fresh target without index.php is tested at the selected local verification URL.
+
+The installer briefly creates a token-only index.php at the intended destination.
+It checks PHP 5.4+, date support, the basic functions used by the dashboard, and
+writable PHP temporary storage. It requires HTTP 200 with the exact runtime token.
+Raw PHP source, directory listings, other pages, redirects, 403 and 502 responses,
+and failed PHP execution stop installation. The probe is removed on success or
+failure; a newly created empty directory is also removed. Existing directories
+and unrelated assets are preserved.
+
+A target with an existing index.php is not overwritten by this check. It reports
+that the fresh-site probe was skipped; final deployed-dashboard HTTP verification
+and rollback remain required for updates and legacy dashboards. The probe is a
+route/capability check, not a web-runtime security certification or proof that
+the route uses a particular vendor RPM build.
+
+Failures point administrators to the dashboard-only Nginx/PHP-FPM recipe or
+Apache handler/restart guidance. The installer does not edit server configuration,
+restart services, disable SELinux or alter the Icom proxy. Use the site's actual
+worker identity/socket, HTTP/HTTPS route, callsign, timezone, status feeds and logs.
+Check both public HTTPS and local verification routes afterward.
+
+Use a current complete tools checkout: a v0.5.1-tagged installer does not gain
+this preflight merely by downloading newer dashboard files. This new gate has
+isolated test coverage; live fresh-install acceptance for it remains pending.
+
+The VE7VIC prerequisites checklist also includes active QSO_DETAILS=Y, append-mode
+logging in the actual launcher, retained/readable detailed logs, preserved 1NFO
+authentication, and a known-transmission display check. The installer does not
+set those gateway-owned values automatically.
+
+The preflight reports CLI PHP and, on a fresh site, the PHP version that actually
+handles the selected web route. A CLI/web version mismatch blocks deployment for
+runtime review. It does not infer the PHP version from the OS or certify unknown
+vendor fixes. Existing legacy status pages and Icom routes remain in service;
+the probe is confined to the chosen unified-dashboard target. Existing dashboard
+entry points are not probed or overwritten; final HTTP verification still applies.

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased tools — application-readiness preflight, 2026-10-31
+
+- Test fresh-site PHP execution/capabilities on the actual selected dashboard route after approval and before dashboard deployment; reject raw source, wrong content and HTTP failures with configuration guidance.
+- Clean temporary token probes on exit, preserve existing entry points/assets and retain final verification/rollback. No automatic server/gateway configuration changes or restarts.
+- Add isolated execution, failure-status, cleanup, symlink and existing-file regression tests. Live first-install qualification pending; old tagged installers remain unchanged.
+
+
 ## Operational guidance — October 30, 2026
 
 - Document QSO_DETAILS=Y as a detailed-activity prerequisite, activation/restart precautions, append-mode logging and preserved 1NFO authentication.

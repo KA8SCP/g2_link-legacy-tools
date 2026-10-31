@@ -8,5 +8,6 @@ php "$root/tests/php-security-test.php"
 bash "$root/tests/php-security-test.sh"
 bash "$root/tests/installer-transcript-test.sh"
 bash "$root/tests/updater-test.sh"
+bash "$root/tests/web-readiness-test.sh"
 node "$root/tests/theme-test.js"
 echo 'Release syntax, hashes and isolated fixtures passed.'

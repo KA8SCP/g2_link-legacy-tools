@@ -6,7 +6,8 @@ fixture=$(mktemp -d)
 trap 'rm -rf -- "$fixture"' EXIT
 mkdir -p "$fixture/scripts" "$fixture/bin" "$fixture/html/dashboard" "$fixture/backups"
 chmod 700 "$fixture/backups"
-cp "$root/scripts/update-dashboard.sh" "$root/scripts/read-dashboard-settings.php" "$fixture/scripts/"
+cp "$root/scripts/update-dashboard.sh" "$root/scripts/read-dashboard-settings.php" \
+    "$root/scripts/check-web-readiness.sh" "$fixture/scripts/"
 sed "s|transcript_root=/var/log/g2-dashboard-install|transcript_root=$fixture/transcripts|; s|\[\[ \${EUID:-1} == 0 \]\]|[[ 1 == 1 ]]|; s|== 0 \&\&|== $(id -u) \&\&|" \
     "$root/scripts/install-dashboard-interactive.sh" > "$fixture/scripts/install-dashboard-interactive.sh"
 # Avoid root-only readability/SELinux helpers; all fixture files belong to runner.
