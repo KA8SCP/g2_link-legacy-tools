@@ -24,6 +24,8 @@ Starting with v0.5.1, initial installations must pass the [PHP2Shell fixed-packa
 
 The current installer defaults the g2_link executable prompt to `/root/g2_link/g2_link`; enter another absolute path if your installation differs. The published v0.5.1 tag retains the earlier prompt default, so enter `/root/g2_link/g2_link` explicitly when using that tagged installer.
 
+Current complete tools also perform a [fresh-site web-readiness check](docs/INSTALL.md#automatic-fresh-site-web-readiness) after approval and before deployment, using a temporary token-only PHP entry point. It rejects a misrouted or non-executing PHP route without installing dashboard files. Existing index.php files are preserved and use final dashboard verification. The v0.5.1-tagged tools predate this gate.
+
 Review the prompted paths, callsign, timezone, ownership and verification URL. Private transcripts, outside-web-root backups, checksums, PHP syntax checks and HTTP verification are included. Deployment/verification failure triggers rollback.
 
 ## Update an installed dashboard
@@ -45,3 +47,10 @@ Unsupported or incomplete historical link evidence remains Unknown. The external
 ## Attribution and history
 
 The legacy g2_link and DPlus applications remain independent. Existing authorship, provenance and historical milestones are retained in the source materials, LICENSE and CHANGELOG.md. Separate MonLink review materials retain their existing qualification/licensing status; installing the dashboard does not apply that patch. This repository does not contain the complete upstream MonLink program or gateway binaries.
+
+The preflight reports CLI PHP and, on a fresh site, the PHP version that actually
+handles the selected web route. A CLI/web version mismatch blocks deployment for
+runtime review. It does not infer the PHP version from the OS or certify unknown
+vendor fixes. Existing legacy status pages and Icom routes remain in service;
+the probe is confined to the chosen unified-dashboard target. Existing dashboard
+entry points are not probed or overwritten; final HTTP verification still applies.
