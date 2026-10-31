@@ -14,7 +14,7 @@ Remote DPlus rows require a unique historical link association and matching refl
 
 DPlus reads the newest dated archive and active log. Startup sessions remain independent. Untimestamped link/unlink/timeout events retain log order and surrounding timestamp bounds; no exact event time is fabricated. Transition windows, inconsistent snapshots, unresolved timeouts, regressions and uncovered times remain unknown. Complete snapshots may end at the next snapshot header; an incomplete EOF snapshot is excluded.
 
-g2_link DCS history reads all retained uncompressed `log-YYYYMMDD` archives and the active log. This matches WB1GOF's daily copytruncate rule. Link requests and explicit linked announcements establish associations; unlink, restart, timeout, non-DCS replacement, clock-regression and missing archive-day evidence clear them conservatively. Initial unknown state is not inferred from current HTML. Exact overlapping records are deduplicated and inconsistent duplicates are excluded. Distinct stream IDs/times remain distinct, even for the same callsign. Only DCS START records with a unique supported association are included; XRF historical parsing is not implemented.
+g2_link DCS and XRF/DExtra history reads all retained uncompressed `log-YYYYMMDD` archives and the active log. This matches WB1GOF's daily copytruncate rule. Link requests and explicit linked announcements establish associations; unlink, restart, reflector/unknown timeout, unsupported replacement, clock-regression and missing archive-day evidence clear them conservatively. Initial unknown state is not inferred from current HTML. Exact overlapping records are deduplicated and inconsistent duplicates are excluded. Distinct stream IDs/times remain distinct, even for the same callsign. Supported DCS and XRF/DExtra START records require a unique source/IP/module association. Exact inbound-client expiry diagnostics do not clear reflector evidence.
 
 The parser recognizes the documented legacy log formats. A restart without a recognizable marker, a missing log section, or a gateway using a different rotation scheme requires site review. Retention limits history; this is not a permanent event database.
 
@@ -61,8 +61,7 @@ the added indexed lookup. No gateway configuration or linking commands change.
 The WL7CWI XRF405 A fixture now retains KA8SCP/52AP and VE6NS/ID52 remote
 streams, their RPT1/RPT2 values and local B link association. The active-log
 filter also preserves these records before parsing. Existing DCS tests remain
-required. This candidate is not a stable release and needs gateway HTTP/activity
-acceptance; installing it changes dashboard files only.
+required. Operator confirmed the XRF correction on WL7CWI and later VE7VIC; this remains a candidate rather than a stable tag. Installing it changes dashboard files only.
 
 ## Remote-client expiry correction (0.5.2-rc.2)
 
@@ -80,9 +79,17 @@ The pinned legacy source emits this diagnostic while erasing an entry from
 `inbound_list`; reflector heartbeat expiry separately logs
 `Unlinked from [...] mod ..., TIMEOUT...`.
 See [legacy source](https://github.com/KA8SCP/g2_link/blob/7d22f6f566c863cd6154b198817e47eece9080e5/g2_link.cpp#L1049).
-WB1GOF target-site acceptance remains pending.
+WB1GOF target-site DCS activity recovery was confirmed by the operator. See RELEASE-READINESS.md for additional site reports.
 
 The operator identifies `1NFO` as a synthetic query identity normally masked
 from displayed output. It is not a radio user or a reflector disconnect. This
 correction recognizes the inbound-client expiry event type, rather than hiding
 all lines containing that callsign or ignoring every timeout.
+
+## Detailed logging prerequisite
+
+Incoming XRF/DCS headers are logged only with `QSO_DETAILS=Y` active in g2_link.
+Without those records, Module Status can remain correct while detailed remote
+activity is absent. Logs must also be readable and preserve history across
+service starts/rotation. See [installation prerequisites](INSTALL.md#g2_link-activity-logging-and-history-retention).
+The dashboard does not change g2_link configuration or its service automatically.
