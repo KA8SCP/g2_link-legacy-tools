@@ -108,6 +108,7 @@ for utility in php git sha256sum tar install mktemp realpath getent curl stat; d
     command -v "$utility" >/dev/null || die "Missing prerequisite: $utility"
 done
 php -r 'exit(version_compare(PHP_VERSION,"5.4.0",">=") ? 0 : 1);' || die 'PHP CLI 5.4 or newer is required.'
+printf 'CLI PHP version: '; php -r 'echo PHP_VERSION,"\n";'
 # Initial-install PHP security gate
 if ! $update_mode; then
     security_scripts=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -237,10 +238,14 @@ if(file_put_contents($argv[1],$data)!==strlen($data)) exit(1);
 php -r 'require $argv[1]."/dashboard_config.php"; date_default_timezone_set(dashboardConfig("timezone")); echo "Configuration: ",dashboardConfig("callsign"),"\n";' "$candidate"
 
 printf '\nReady to install %s at %s\nRepository: %s\nRef: %s\nCommit: %s\nVerification: %s\nBackup: %s\n' "$gateway" "$destination" "$repo" "$ref" "$revision" "$check_url" "$backup"
+printf 'Fresh sites: test the web route with a temporary token-only PHP entry point, then remove it before deployment. Existing index.php files are preserved.\n'
 yes 'Install this reviewed configuration?' || { echo 'Cancelled; dashboard unchanged.'; exit 0; }
 if $update_mode; then
     cmp -s -- "$work/saved-dashboard.local.php" "$destination/dashboard.local.php" || die 'Saved settings changed during review; rerun the updater.'
 fi
+# Fresh-site route check: no dashboard/config files are copied before it passes.
+readiness_scripts=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+bash "$readiness_scripts/check-web-readiness.sh" "$document_root" "$destination" "$check_url" "$web_user" "$web_group"
 existed=false
 if [[ -d $destination ]]; then
     existed=true
