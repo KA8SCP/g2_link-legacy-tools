@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.2 — stable activity and installation-readiness release, 2026-10-31
+
+- Promote the operator-tested XRF/DExtra activity and inbound-client expiry fixes from rc.1/rc.2.
+- Add fresh-site PHP execution/capability/version readiness checks before dashboard deployment, while preserving existing entry points and legacy pages.
+- Document QSO_DETAILS=Y, append logging, site-specific PHP/web routing, runtime restarts after PHP changes and VE7VIC's dashboard-only Nginx recipe.
+- Update package identity/default install tag and retain stable-release updater selection, saved configuration, ownership, transcripts, backup and rollback.
+- Automated release checks pass; live activity reports cover the candidate fixes. Live fresh-install acceptance of the new preflight, including planned VE3RXR, remains pending.
+
+
 ## Unreleased tools — application-readiness preflight, 2026-10-31
 
 - Test fresh-site PHP execution/capabilities on the actual selected dashboard route after approval and before dashboard deployment; reject raw source, wrong content and HTTP failures with configuration guidance.

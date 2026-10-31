@@ -1,18 +1,13 @@
 # Updating an installed dashboard
 
-Version 0.5.1 is the stable maintenance release, retaining the configuration-preserving updater, dark display and clearer Local RF/Remote presentation. Its new PHP2Shell prerequisite applies to first installations; updating an existing dashboard does not patch or certify PHP. See [release notes](releases/v0.5.1.md).
+Version 0.5.2 is the stable activity/readiness release. It includes XRF/DExtra history, corrected inbound-client expiry handling and a fresh-site web-readiness probe. The PHP2Shell gate introduced in v0.5.1 remains a first-install prerequisite; updating a dashboard does not patch or certify PHP. See [release notes](releases/v0.5.2.md).
 
-## Activity-fix candidate and log prerequisites
+## Activity fixes and log prerequisites
 
-The current `main` branch includes 0.5.2-rc.2. It adds XRF/DExtra stream parsing
-and preserves reflector history across inbound-client expiry such as the
-dashboard identity 1NFO. A plain updater still selects the latest published
-stable release (v0.5.1); merging these changes does not move that stable tag.
-
-To select the tested candidate explicitly from an existing tools checkout:
+Version 0.5.2 promotes the operator-tested activity fixes and adds the isolated-tested web-readiness gate. A plain updater selects the latest published stable GitHub Release. Pin this release explicitly if desired:
 
 ```bash
-bash scripts/update-dashboard.sh --ref fix/xrf-activity \
+bash scripts/update-dashboard.sh --ref v0.5.2 \
   --check-url http://127.0.0.1/dashboard/index.php
 ```
 

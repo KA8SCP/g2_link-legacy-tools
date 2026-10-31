@@ -1,6 +1,6 @@
 # Dashboard production release qualification
 
-Current release: v0.5.1. See [v0.5.1 changes and qualification](releases/v0.5.1.md). It adds an isolated-tested first-install PHP2Shell package gate and changes the footer/package identity; it does not claim a new live installation on the gateways. The evidence below records the v0.5.0 baseline. All four gateways subsequently completed v0.5.0 installation and separate PHP security remediation with local HTTP verification, as recorded in the v0.5.1 notes.
+Current release: **v0.5.2**, October 31, 2026. See [v0.5.2 notes](releases/v0.5.2.md). It promotes the activity fixes below and includes the isolated-tested fresh-site web-readiness gate. Live fresh-install acceptance of that new gate remains pending; VE3RXR is planned, not a passed test. Historical v0.5.0/v0.5.1 evidence below remains separately scoped.
 
 Release date: October 27, 2026. Package version 0.5.0; stable tag v0.5.0. Production scope is the read-only dashboard and its install/update tooling for existing configured gateways. It is not a release of g2_link, DPlus, Icom software, MonLink, or an OS image.
 
@@ -38,8 +38,7 @@ Use TESTING.md for repeatable acceptance steps and UPDATING.md for deployment in
 ## Activity-fix candidate qualification
 
 Candidate 0.5.2-rc.2 includes XRF/DExtra history and a correction preventing
-inbound-client expiry from invalidating reflector history. Stable v0.5.1 remains
-the published release; candidate merge does not publish a new stable tag.
+inbound-client expiry from invalidating reflector history. These activity fixes are promoted in stable v0.5.2; the reports below identify the exact candidate tested at each site.
 
 | Site | Deployment evidence | Operator activity acceptance |
 | --- | --- | --- |
@@ -67,3 +66,7 @@ No claim is made that every case was exercised at every site. None of these
 changes modifies g2_link.cfg, MonLink, DPlus or the Icom applications. Future
 stable release/promotion and any remaining protocol coverage need explicit
 tracking.
+
+## v0.5.2 fresh-install gate
+
+The complete Linux CI release suite passes for the new readiness tools, including rejection of raw PHP, wrong content, 403/502, redirects, network failures and CLI/web version mismatch, plus cleanup and legacy-file preservation. These are isolated boundaries, not a live new gateway installation. The gate leaves existing index.php files untouched and does not substitute for final deployed HTTP/RF checks. VE3RXR is the proposed next live first installation; record its outcome independently.

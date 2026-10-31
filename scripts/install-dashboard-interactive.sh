@@ -55,7 +55,7 @@ update_mode=false
 package_dir=''
 requested_destination=/var/www/html/dashboard
 repo=https://github.com/KA8SCP/g2_link-legacy-tools.git
-ref=v0.5.1
+ref=v0.5.2
 check_url=''
 backup_root=/var/backups/g2-dashboard
 while (( $# )); do

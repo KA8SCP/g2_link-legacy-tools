@@ -211,7 +211,7 @@ Use the v0.5.0 tag for reproducible first installation. The interactive installe
 
 ## Automatic fresh-site web readiness
 
-The current tools checkout adds an application check distinct from the PHP2Shell
+The v0.5.2 tools add an application check distinct from the PHP2Shell
 package prerequisite. After you approve the reviewed installation, but before
 dashboard PHP, site configuration or backup/deployment files are copied, a
 fresh target without index.php is tested at the selected local verification URL.
@@ -236,7 +236,7 @@ restart services, disable SELinux or alter the Icom proxy. Use the site's actual
 worker identity/socket, HTTP/HTTPS route, callsign, timezone, status feeds and logs.
 Check both public HTTPS and local verification routes afterward.
 
-Use a current complete tools checkout: a v0.5.1-tagged installer does not gain
+Use the complete v0.5.2 tools checkout: a v0.5.1-tagged installer does not gain
 this preflight merely by downloading newer dashboard files. This new gate has
 isolated test coverage; live fresh-install acceptance for it remains pending.
 
