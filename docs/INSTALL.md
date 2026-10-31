@@ -238,7 +238,7 @@ Check both public HTTPS and local verification routes afterward.
 
 Use the complete v0.5.2 tools checkout: a v0.5.1-tagged installer does not gain
 this preflight merely by downloading newer dashboard files. This new gate has
-isolated test coverage; live fresh-install acceptance for it remains pending.
+isolated test coverage and one operator-reported CentOS 7/Apache fresh-install success. Final browser/activity acceptance and live Nginx/FPM preflight qualification remain separate.
 
 The VE7VIC prerequisites checklist also includes active QSO_DETAILS=Y, append-mode
 logging in the actual launcher, retained/readable detailed logs, preserved 1NFO
