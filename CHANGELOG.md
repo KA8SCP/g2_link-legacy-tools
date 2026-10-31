@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased tools — installation lessons
+
+- Add --preflight-only with explicit temporary-probe consent, transcripts and cleanup but no dashboard deployment, saved-setting edits, deployment backups or service changes.
+- Classify web readiness failures (source/listing/capability/temp/version/routes/backends) instead of a generic HTTP-200 failure.
+- Default to the explicit index.php verification URL and separately report directory URL usability without rolling back a working entry point.
+- Print a PC/mobile, timezone, RF/remote, legacy-page, HTTPS and logging acceptance checklist; preserve scoped first-install evidence.
+- Stable v0.5.2 tags and live gateways are unchanged. New tools need live acceptance after isolated checks.
+
+
 ## v0.5.2 — stable activity and installation-readiness release, 2026-10-31
 
 - Promote the operator-tested XRF/DExtra activity and inbound-client expiry fixes from rc.1/rc.2.

@@ -52,6 +52,7 @@ trap finish EXIT
 printf 'Installer started at %s\nTranscript: %s\nPrompts and output are recorded; typed responses are not echoed. Do not enter credentials.\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$transcript"
 # Parse options before prompts. Updates require an existing saved configuration.
 update_mode=false
+preflight_only=false
 package_dir=''
 requested_destination=/var/www/html/dashboard
 repo=https://github.com/KA8SCP/g2_link-legacy-tools.git
@@ -61,6 +62,7 @@ backup_root=/var/backups/g2-dashboard
 while (( $# )); do
     case $1 in
         --update) update_mode=true; shift ;;
+        --preflight-only) preflight_only=true; shift ;;
         --directory|--ref|--check-url|--backup-root|--package-dir)
             (( $# >= 2 )) || die "Missing value for $1"
             case $1 in
@@ -71,7 +73,7 @@ while (( $# )); do
                 --package-dir) package_dir=$(realpath -e -- "$2") ;;
             esac
             shift 2 ;;
-        *) die 'Usage: install-dashboard-interactive.sh [--package-dir PATH] or update-dashboard.sh [--directory PATH] [--ref TAG_OR_BRANCH] [--check-url LOCAL_URL] [--backup-root PATH]' ;;
+        *) die 'Usage: install-dashboard-interactive.sh [--preflight-only] [--package-dir PATH] or update-dashboard.sh [--directory PATH] [--ref TAG_OR_BRANCH] [--check-url LOCAL_URL] [--backup-root PATH]' ;;
     esac
 done
 work=$(mktemp -d /var/tmp/g2-dashboard-install.XXXXXXXX)
@@ -90,7 +92,7 @@ if $update_mode; then
     [[ $destination == "$document_root/"* && $document_root != / ]] || die 'Saved document root does not contain dashboard.'
     web_user=$(stat -c %U "$destination/index.php")
     web_group=$(stat -c %G "$destination/index.php")
-    if [[ -z $check_url ]]; then check_url="http://127.0.0.1${destination#"$document_root"}/"; fi
+    if [[ -z $check_url ]]; then check_url="http://127.0.0.1${destination#"$document_root"}/index.php"; fi
     printf 'Update %s; preserving saved configuration and existing file ownership %s:%s.\nSource: %s (%s)\n' "$gateway" "$web_user" "$web_group" "$repo" "$ref"
 fi
 # Qualify g2_link before checking dashboard-specific PHP/web prerequisites.
@@ -195,16 +197,18 @@ for path in "$dp_status" "$g2_status" "$dp_log" "$g2_log"; do
     fi
 done
 relative=${destination#"$document_root"}
-ask check_url 'Local dashboard URL for HTTP verification' "http://127.0.0.1$relative/"
+ask check_url 'Local dashboard URL for HTTP verification' "http://127.0.0.1$relative/index.php"
 [[ $check_url =~ ^https?://(127\.0\.0\.1|localhost|\[::1\])(:[0-9]+)?/ ]] || die 'Verification URL must be local HTTP/HTTPS.'
 ask backup_root 'Backup directory outside the web root' '/var/backups/g2-dashboard'
 backup_root=$(realpath -m -- "$backup_root")
 [[ $backup_root != / && $backup_root != "$document_root" && $backup_root != "$document_root/"* ]] || die 'Backups must be outside the web root.'
-if [[ ! -e $backup_root ]]; then
+if ! $preflight_only && [[ ! -e $backup_root ]]; then
     install -d -m 0700 -- "$backup_root"
 fi
-[[ -d $backup_root && $(stat -c %u "$backup_root") == 0 &&
-    $(stat -c %a "$backup_root") == 700 ]] || die 'Use a dedicated root-owned backup directory with mode 0700.'
+if ! $preflight_only || [[ -e $backup_root ]]; then
+    [[ -d $backup_root && $(stat -c %u "$backup_root") == 0 &&
+        $(stat -c %a "$backup_root") == 700 ]] || die 'Use a dedicated root-owned backup directory with mode 0700.'
+fi
 stamp=$(date -u +%Y%m%dT%H%M%SZ)-$$
 backup=$backup_root/dashboard-$stamp.tar.gz
 
@@ -239,13 +243,23 @@ php -r 'require $argv[1]."/dashboard_config.php"; date_default_timezone_set(dash
 
 printf '\nReady to install %s at %s\nRepository: %s\nRef: %s\nCommit: %s\nVerification: %s\nBackup: %s\n' "$gateway" "$destination" "$repo" "$ref" "$revision" "$check_url" "$backup"
 printf 'Fresh sites: test the web route with a temporary token-only PHP entry point, then remove it before deployment. Existing index.php files are preserved.\n'
-yes 'Install this reviewed configuration?' || { echo 'Cancelled; dashboard unchanged.'; exit 0; }
+if $preflight_only; then
+    printf 'PREFLIGHT ONLY: no dashboard deployment, saved-setting changes, backups or service restarts. A private transcript and temporary probe may be created.\n'
+    yes 'Run the reviewed preflight checks without installing?' || { echo 'Cancelled; dashboard unchanged.'; exit 0; }
+else
+    yes 'Install this reviewed configuration?' || { echo 'Cancelled; dashboard unchanged.'; exit 0; }
+fi
 if $update_mode; then
     cmp -s -- "$work/saved-dashboard.local.php" "$destination/dashboard.local.php" || die 'Saved settings changed during review; rerun the updater.'
 fi
 # Fresh-site route check: no dashboard/config files are copied before it passes.
 readiness_scripts=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 bash "$readiness_scripts/check-web-readiness.sh" "$document_root" "$destination" "$check_url" "$web_user" "$web_group"
+if $preflight_only; then
+    echo 'Preflight completed; dashboard not installed or updated. Existing entry points, if present, were preserved and not freshly probed.'
+    echo 'Confirm QSO_DETAILS=Y is active, append logging and source freshness separately; see docs/INSTALL.md.'
+    exit 0
+fi
 existed=false
 if [[ -d $destination ]]; then
     existed=true
@@ -273,19 +287,38 @@ install -o "$web_user" -g "$web_group" -m 0644 -- "$candidate/index.php" "$desti
 if command -v restorecon >/dev/null; then restorecon -R -- "$destination"; fi
 bash "$package_dir/scripts/verify-dashboard.sh" "$destination"
 curl --fail --silent --show-error --max-time 120 "$check_url" > "$work/page.html"
-php -r '
+verify_rendered_page() {
+    php -r '
 $s=file_get_contents($argv[1]);
 $ok=strpos($s,"Unified Last Heard")!==false && strpos($s,"RF Command Reference")!==false &&
 strpos($s,"Remote Users")!==false && strpos($s,"Software &amp; Sources")!==false &&
 !preg_match("/Warning:|Fatal error:|Parse error:|<\\?php/",$s);
 exit($ok ? 0 : 1);
-' "$work/page.html"
+' "$1"
+}
+verify_rendered_page "$work/page.html"
 trap - ERR
+base_check_url=${check_url%%\?*}
+if [[ $base_check_url == */index.php ]]; then
+    directory_url=${base_check_url%index.php}
+    if curl --fail --silent --show-error --max-time 120 "$directory_url" > "$work/directory.html" &&
+        verify_rendered_page "$work/directory.html"; then
+        printf 'Directory URL HTTP-verified separately: %s\n' "$directory_url"
+    else
+        printf 'WARNING: installation passed at index.php, but %s did not verify. Review the directory index setting; direct index.php remains usable.\n' "$directory_url" >&2
+    fi
+fi
 printf '\nInstalled and HTTP-verified: %s\n' "$check_url"
 if $existed; then
     printf 'Rollback archive: %s\n' "$backup"
 else
     printf 'New-install record: %s/new-install-%s.txt\n' "$backup_root" "$stamp"
 fi
-printf 'Review the page and perform local RF/remote transmission tests.\n'
+printf 'Acceptance checklist (not automatically certified):\n'
+printf '  [ ] PC and mobile layout/footer display correctly.\n'
+printf '  [ ] Callsign, timezone and current module states are correct.\n'
+printf '  [ ] Known local RF and remote activity appears with correct source labels.\n'
+printf '  [ ] Legacy dashboards and Icom routes remain reachable.\n'
+printf '  [ ] Public HTTPS and /dashboard/ work; retain the transcript and rollback record.\n'
+printf '  [ ] QSO_DETAILS=Y is active and append/rotation preserves readable logs.\n'
 

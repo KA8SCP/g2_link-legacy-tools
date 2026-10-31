@@ -162,7 +162,7 @@ configuration at each site.
 
 1. Complete [web-runtime readiness](#web-runtime-readiness-before-installation), including the appropriate post-PHP-update restart and HTTP execution test. Then clone the GitHub repository and review the package/ref.
 2. Run `sudo bash scripts/install-dashboard-interactive.sh`, or `sudo bash scripts/install-dashboard-interactive.sh --package-dir "$PWD"` for the reviewed local checkout.
-3. Enter callsign (without module), log timezone, document root, destination, DPlus/g2_link HTML and log paths, web user/group, local HTTP URL and backup location. Paths can differ from WB1GOF's defaults. The verification URL must point to this site's web virtual host; adjust its loopback port where necessary.
+3. Enter callsign (without module), log timezone, document root, destination, DPlus/g2_link HTML and log paths, web user/group, local HTTP URL and backup location. Paths can differ from WB1GOF's defaults. The verification URL defaults to the explicit index.php entry point and must point to this site's web virtual host; adjust its loopback port where necessary. The directory URL is tested separately; a directory-index warning does not undo a verified direct entry point.
 4. Review the concrete installation summary and approve installation. The installer verifies all release hashes and PHP syntax and validates the generated configuration before this final prompt.
 5. Existing files are backed up outside the web tree. Dependencies/configuration are copied before index.php. Existing unrelated files are retained; release-file symlinks are refused. The installer restores SELinux labels, checks deployed hashes and fetches the page through the web server. Failed deployment verification reverts the dashboard and retains failure files for review.
 6. Perform RF and remote-transmission acceptance tests. An HTTP check verifies rendering, not complete radio behavior or every log format.
@@ -251,3 +251,60 @@ runtime review. It does not infer the PHP version from the OS or certify unknown
 vendor fixes. Existing legacy status pages and Icom routes remain in service;
 the probe is confined to the chosen unified-dashboard target. Existing dashboard
 entry points are not probed or overwritten; final HTTP verification still applies.
+
+## Preflight-only mode (current tools)
+
+This post-v0.5.2 tools improvement is on main; the immutable v0.5.2 tag does not
+include the new flag or expanded error classifications. Use a reviewed current
+complete tools checkout.
+
+```bash
+sudo bash scripts/install-dashboard-interactive.sh --preflight-only --package-dir "$PWD"
+```
+
+It performs the normal prerequisite/package/hash/syntax/site-setting checks and
+asks permission to run the temporary fresh-site web probe. It does not deploy
+the dashboard, update saved settings, create deployment backups, restart
+services or edit web/gateway configuration. A private transcript and temporary
+candidate/package files are created; candidates and fresh probes are cleaned.
+The normal first-install PHP2Shell gate still applies. Updating-style checks can
+be requested with update-dashboard.sh --preflight-only for existing saved sites.
+
+Existing index.php files are never replaced by a probe. The check explicitly
+reports that web probing was skipped there; this is partial readiness, not a
+claim that the existing runtime is correct. Final deployed HTTP verification
+and the user's application acceptance remain required.
+
+## Readiness failure messages and verification URLs
+
+The current tools distinguish raw PHP source, directory listings, unexpected
+pages, old web PHP, missing date support, named missing/disabled capabilities,
+unwritable PHP temporary storage, CLI/web mismatch, redirects, forbidden/missing
+routes and unavailable backends. Do not bypass these errors or disable SELinux.
+Investigate the indicated runtime/route; refer to the Apache/mod_php and
+Nginx/PHP-FPM guidance above. No full response body or configuration source is
+printed into the diagnostics.
+
+The default URL ends in /dashboard/index.php. For a working direct entry point,
+the shorter directory URL is checked separately during fresh-site readiness and
+after normal deployment. Failure of only that directory URL produces a warning
+to review DirectoryIndex/index configuration; it does not roll back a working
+direct page. A failed selected primary URL still blocks/rolls back as before.
+Verify the corresponding public HTTPS route separately.
+
+## Final acceptance checklist
+
+The installer now prints these outstanding operator checks after success:
+
+- PC and mobile layout, footer and filters.
+- Correct callsign, timezone and current module states.
+- A known local RF transmission and an incoming remote transmission, with correct source labels.
+- Continued access to legacy dashboards and Icom routes.
+- Public HTTPS and the directory URL, plus retained transcript/rollback records.
+- Active QSO_DETAILS=Y, readable detailed logs and append/rotation continuity.
+
+A reported CentOS 7/Apache first installation has passed fresh-site readiness,
+deployment and PC/mobile browser checks. Radio activity and legacy-page
+continuity were not confirmed in that report and remain separate. This does
+not establish live qualification for every web stack or the new preflight-only
+mode; see RELEASE-READINESS.md.
