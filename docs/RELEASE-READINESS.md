@@ -1,6 +1,6 @@
 # Dashboard production release qualification
 
-Current release: **v0.5.2**, October 31, 2026. See [v0.5.2 notes](releases/v0.5.2.md). It promotes the activity fixes below and includes the isolated-tested fresh-site web-readiness gate. Live fresh-install acceptance of that new gate remains pending; VE3RXR is planned, not a passed test. Historical v0.5.0/v0.5.1 evidence below remains separately scoped.
+Current release: **v0.5.2**, October 31, 2026. See [v0.5.2 notes](releases/v0.5.2.md). It promotes the activity fixes below and includes the isolated-tested fresh-site web-readiness gate. One operator-reported fresh installation has since passed web readiness and final HTTP deployment verification on CentOS 7/Apache. Browser, activity and legacy-page acceptance remain pending; live Nginx/FPM preflight qualification is separate. Historical v0.5.0/v0.5.1 evidence below remains separately scoped.
 
 Release date: October 27, 2026. Package version 0.5.0; stable tag v0.5.0. Production scope is the read-only dashboard and its install/update tooling for existing configured gateways. It is not a release of g2_link, DPlus, Icom software, MonLink, or an OS image.
 
@@ -69,4 +69,4 @@ tracking.
 
 ## v0.5.2 fresh-install gate
 
-The complete Linux CI release suite passes for the new readiness tools, including rejection of raw PHP, wrong content, 403/502, redirects, network failures and CLI/web version mismatch, plus cleanup and legacy-file preservation. These are isolated boundaries, not a live new gateway installation. The gate leaves existing index.php files untouched and does not substitute for final deployed HTTP/RF checks. VE3RXR is the proposed next live first installation; record its outcome independently.
+The complete Linux CI release suite passes for the new readiness tools, including rejection of raw PHP, wrong content, 403/502, redirects, network failures and CLI/web version mismatch, plus cleanup and legacy-file preservation. These automated cases use isolated boundaries. Separately, an operator-reported CentOS 7/Apache fresh installation passed the executed-PHP preflight and final HTTP deployment check. The gate leaves existing index.php files untouched and does not substitute for final deployed HTTP/RF checks. The reported fresh-install result does not qualify every platform or replace browser, transmission and legacy-page continuity checks.
