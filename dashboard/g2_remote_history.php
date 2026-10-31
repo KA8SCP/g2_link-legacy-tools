@@ -1,5 +1,5 @@
 <?php
-/* Development DCS history. PHP 5.4 compatible. */
+/* DCS and XRF/DExtra history. PHP 5.4 compatible. */
 require_once __DIR__ . '/g2_remote_headers.php';
 
 function g2RemoteHistoryRead($logfile)
@@ -59,7 +59,15 @@ function g2RemoteHistoryRead($logfile)
                 $result['link_history']['last'] = $epoch;
             }
         }
-        if (preg_match('/startup|starting|shutdown|timeout|timed out|disconnect/i', $line)) {
+        // inbound_list client expiry is not a reflector unlink. Preserve
+        // confirmed link evidence for this exact legacy diagnostic only;
+        // genuine/unknown timeout, disconnect and restart events still reset it.
+        $clientExpiry = preg_match(
+            '/^\d{6} at \d{2}:\d{2}:\d{2}:call=[^,\r\n]+ timeout, removing [0-9.]+, users=\d+\s*$/',
+            $line
+        );
+        if (!$clientExpiry &&
+            preg_match('/startup|starting|shutdown|timeout|timed out|disconnect/i', $line)) {
             $state = array();
             $pending = array();
         }
@@ -71,15 +79,20 @@ function g2RemoteHistoryRead($logfile)
             unset($state[$request[1]], $pending[$request[1]]);
         }
         if (preg_match(
-            '/sending link request from mod ([A-E]) to link with: ' .
-            '\[(DCS\d{3})\s*\] mod ([A-Z]) \[([0-9.]+)\]/', $line, $m
+            '/sending link request(?:\(dextra\))? from mod ([A-E]) to link with: ' .
+            '\[((?:DCS|XRF)\d{3})\s*\] mod ([A-Z]) \[([0-9.]+)\]/', $line, $m
         )) {
-            unset($state[$m[1]]);
-            $pending[$m[1]] = array(
-                'via' => $m[2] . ' ' . $m[3], 'ip' => $m[4]
-            );
+            // Accept only known request/transport pairs. Every request above
+            // already clears old evidence, including unsupported transports.
+            $dextra = strpos($line, 'sending link request(dextra) ') !== false;
+            if (($dextra && substr($m[2], 0, 3) === 'XRF') ||
+                (!$dextra && substr($m[2], 0, 3) === 'DCS')) {
+                $pending[$m[1]] = array(
+                    'via' => $m[2] . ' ' . $m[3], 'ip' => $m[4]
+                );
+            }
         }
-        if (preg_match('/Unlinking from \[(DCS\d{3})\s*\] mod ([A-Z])/', $line, $m)) {
+        if (preg_match('/Unlinking from \[((?:DCS|XRF)\d{3})\s*\] mod ([A-Z])/', $line, $m)) {
             $via = $m[1] . ' ' . $m[2];
             foreach ($state as $module => $link) {
                 if ($link['via'] === $via) unset($state[$module]);
@@ -93,7 +106,7 @@ function g2RemoteHistoryRead($logfile)
         }
         if (preg_match(
             '/sending File:\[[^]]*\/linked\.dat\], mod:\[([A-E])\], ' .
-            'RADIO_ID=\[LINKED (DCS\d{3}) ([A-Z])\s*\]/', $line, $m
+            'RADIO_ID=\[LINKED ((?:DCS|XRF)\d{3}) ([A-Z])\s*\]/', $line, $m
         )) {
             $module = $m[1];
             $via = $m[2] . ' ' . $m[3];

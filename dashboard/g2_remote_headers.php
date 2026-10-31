@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/dashboard_config.php';
 /*
- * Collect logged incoming DCS headers and callsign suffixes.
+ * Collect logged incoming DCS and XRF/DExtra headers and callsign suffixes.
  * PHP 5.4 compatible. Suffix is separate from User Message.
  */
 function g2RemoteHeadersRead($logfile)
@@ -18,12 +18,22 @@ function g2RemoteHeadersRead($logfile)
     while (($line = fgets($fh)) !== false) {
         $lineNumber++;
         if (!preg_match(
-            '/^(\d{6}) at (\d{2}:\d{2}:\d{2}):START from dcs: ' .
-            'streamID=(\d+,\d+), my=([^,]*), sfx=([^,]*), ' .
+            '/^(\d{6}) at (\d{2}:\d{2}:\d{2}):START from (?:dcs|remote g2): ' .
+            'streamID=(\d+,\d+), (?:flags=[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}, )?' .
+            'my=([^,]*), sfx=([^,]*), ' .
             'ur=([^,]*), rpt1=([^,]*), rpt2=([^,]*), ' .
             '\d+ bytes fromIP=([0-9.]+), source=([^\r\n]+)\s*$/',
             $line, $m
         )) {
+            continue;
+        }
+
+        // The remote-g2 format also covers other gateway traffic. Only
+        // accept the XRF source family qualified here, never infer a link
+        // or RF delivery from the incoming RPT1/RPT2 header.
+        $source = preg_replace('/\\s+/', ' ', trim($m[10]));
+        $family = strpos($line, ':START from remote g2: ') !== false ? 'XRF' : 'DCS';
+        if (!preg_match('/^' . $family . '[0-9]{3} [A-Z]$/', $source)) {
             continue;
         }
 
@@ -53,7 +63,7 @@ function g2RemoteHeadersRead($logfile)
             'rpt1' => preg_replace('/\s+/', ' ', trim($m[7])),
             'rpt2' => preg_replace('/\s+/', ' ', trim($m[8])),
             'remote_ip' => $m[9],
-            'source' => preg_replace('/\s+/', ' ', trim($m[10])),
+            'source' => $source,
             'line_number' => $lineNumber
         );
     }

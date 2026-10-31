@@ -1,5 +1,26 @@
 # Changelog
 
+## Operational guidance — October 30, 2026
+
+- Document QSO_DETAILS=Y as a detailed-activity prerequisite, activation/restart precautions, append-mode logging and preserved 1NFO authentication.
+- Add the dashboard-only Nginx/PHP-FPM routing recipe used at VE7VIC, preserving Icom proxy routes. Installer does not edit web/gateway services.
+- Record multi-site candidate deployment/activity acceptance separately from automated checks.
+
+## 0.5.2-rc.2 — inbound-client timeout correction, 2026-10-30
+
+- Preserve confirmed reflector history when a separately tracked inbound client expires. Fixes WB1GOF DCS activity disappearing after 1NFO client timeouts.
+- Keep real reflector/unknown timeouts, disconnects, unlinks, restarts and log gaps invalidating stale evidence.
+- Add WB1GOF DCS and XRF client-expiry, retained-archive and negative fixtures. WB1GOF DCS recovery confirmed; rc.2 display/activity confirmed at K2BWK, VE3TTT and VE7VIC; rc.1 XRF display confirmed at WL7CWI.
+
+
+## 0.5.2-rc.1 — XRF activity correction, 2026-10-30
+
+- Parse XRF/DExtra remote-g2 stream headers, including flags and callsign suffixes.
+- Preserve these events in retained-log filtering and confirm XRF request/announcement source-IP associations.
+- Add WL7CWI regression fixtures, mismatch/reset/ambiguity and rendered-page checks. RF delivery remains unconfirmed.
+- Candidate functionality has operator validation as recorded in RELEASE-READINESS.md. Stable v0.5.1 remains unchanged.
+
+
 ## Dashboard v0.4.2 portable package � 2026-10-12
 
 - Imported the operator-verified WB1GOF production export (source archive hash in dashboard/README.md).

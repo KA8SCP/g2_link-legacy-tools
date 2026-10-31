@@ -14,7 +14,7 @@ Remote DPlus rows require a unique historical link association and matching refl
 
 DPlus reads the newest dated archive and active log. Startup sessions remain independent. Untimestamped link/unlink/timeout events retain log order and surrounding timestamp bounds; no exact event time is fabricated. Transition windows, inconsistent snapshots, unresolved timeouts, regressions and uncovered times remain unknown. Complete snapshots may end at the next snapshot header; an incomplete EOF snapshot is excluded.
 
-g2_link DCS history reads all retained uncompressed `log-YYYYMMDD` archives and the active log. This matches WB1GOF's daily copytruncate rule. Link requests and explicit linked announcements establish associations; unlink, restart, timeout, non-DCS replacement, clock-regression and missing archive-day evidence clear them conservatively. Initial unknown state is not inferred from current HTML. Exact overlapping records are deduplicated and inconsistent duplicates are excluded. Distinct stream IDs/times remain distinct, even for the same callsign. Only DCS START records with a unique supported association are included; XRF historical parsing is not implemented.
+g2_link DCS and XRF/DExtra history reads all retained uncompressed `log-YYYYMMDD` archives and the active log. This matches WB1GOF's daily copytruncate rule. Link requests and explicit linked announcements establish associations; unlink, restart, reflector/unknown timeout, unsupported replacement, clock-regression and missing archive-day evidence clear them conservatively. Initial unknown state is not inferred from current HTML. Exact overlapping records are deduplicated and inconsistent duplicates are excluded. Distinct stream IDs/times remain distinct, even for the same callsign. Supported DCS and XRF/DExtra START records require a unique source/IP/module association. Exact inbound-client expiry diagnostics do not clear reflector evidence.
 
 The parser recognizes the documented legacy log formats. A restart without a recognizable marker, a missing log section, or a gateway using a different rotation scheme requires site review. Retention limits history; this is not a permanent event database.
 
@@ -33,23 +33,63 @@ Normalize whitespace consistently for logged and HTML MYCALL matching while reta
 # Historical Associated Link column
 
 The unified Last Heard column combines source-labelled DPlus history and confirmed
-g2_link DCS associations at each transmission's timestamp. For example,
+g2_link DCS and XRF/DExtra associations at each transmission's timestamp. For example,
 `DPlus: Unlinked; g2_link: DCS049 C` means DPlus was unlinked while g2_link has
 positive historical evidence for DCS049 C. Simultaneous positive associations are
 both retained; the display does not silently prefer one source.
 
-g2_link local associations reuse the remote-history parser's matching DCS link
+g2_link local associations reuse the remote-history parser's matching DCS or XRF/DExtra link
 request and linked announcement, with the local module preserved. Requests,
 unlink announcements, restarts, timeouts and retained-log boundaries clear old
 evidence. The lookup requires the whole one-second activity window to be within
 retained timestamp coverage and away from a state change. Clock regressions,
 read errors, missing confirmation and unsupported protocol evidence stay Unknown.
-XRF/XLX link history is not inferred from the current status page; additional
-verified event formats are required before those historical associations can be
-populated. This does not change the current Module Status display.
+XRF/DExtra history accepts the observed request(dextra), linked announcement and
+START from remote g2 formats. Source reflector/module and IP must uniquely match
+the retained request/announcement pair. Incoming RPT headers do not establish RF
+delivery. XLX and other unsupported link history remain Unknown; the current
+status page is never used to invent a historical association. This does not change the current Module Status display.
 
 Remote g2_link rows use their existing uniquely confirmed source/IP/module
 association. DPlus history is not applied to those streams. History collection
 uses the existing g2_link log pass, and only the maximum 30 visible rows receive
 the added indexed lookup. No gateway configuration or linking commands change.
 
+
+## XRF activity correction (0.5.2-rc.1)
+
+The WL7CWI XRF405 A fixture now retains KA8SCP/52AP and VE6NS/ID52 remote
+streams, their RPT1/RPT2 values and local B link association. The active-log
+filter also preserves these records before parsing. Existing DCS tests remain
+required. Operator confirmed the XRF correction on WL7CWI and later VE7VIC; this remains a candidate rather than a stable tag. Installing it changes dashboard files only.
+
+## Remote-client expiry correction (0.5.2-rc.2)
+
+WB1GOF's legacy log records an inbound client expiry as
+`call=1NFO     timeout, removing 10.0.0.2, users=0`. This removes an
+inbound client, not the DCS reflector link. The previous generic timeout reset
+mistakenly discarded confirmed reflector history, hiding subsequent DCS activity.
+
+The candidate exempts only this exact timestamped client-expiry diagnostic from
+the link-state reset. Reflector TIMEOUT, unlink, unknown timeout, disconnect,
+restart and log-gap handling remain conservative. Expiry cannot create a link
+association or restore one already invalidated.
+
+The pinned legacy source emits this diagnostic while erasing an entry from
+`inbound_list`; reflector heartbeat expiry separately logs
+`Unlinked from [...] mod ..., TIMEOUT...`.
+See [legacy source](https://github.com/KA8SCP/g2_link/blob/7d22f6f566c863cd6154b198817e47eece9080e5/g2_link.cpp#L1049).
+WB1GOF target-site DCS activity recovery was confirmed by the operator. See RELEASE-READINESS.md for additional site reports.
+
+The operator identifies `1NFO` as a synthetic query identity normally masked
+from displayed output. It is not a radio user or a reflector disconnect. This
+correction recognizes the inbound-client expiry event type, rather than hiding
+all lines containing that callsign or ignoring every timeout.
+
+## Detailed logging prerequisite
+
+Incoming XRF/DCS headers are logged only with `QSO_DETAILS=Y` active in g2_link.
+Without those records, Module Status can remain correct while detailed remote
+activity is absent. Logs must also be readable and preserve history across
+service starts/rotation. See [installation prerequisites](INSTALL.md#g2_link-activity-logging-and-history-retention).
+The dashboard does not change g2_link configuration or its service automatically.

@@ -2,6 +2,27 @@
 
 Version 0.5.1 is the stable maintenance release, retaining the configuration-preserving updater, dark display and clearer Local RF/Remote presentation. Its new PHP2Shell prerequisite applies to first installations; updating an existing dashboard does not patch or certify PHP. See [release notes](releases/v0.5.1.md).
 
+## Activity-fix candidate and log prerequisites
+
+The current `main` branch includes 0.5.2-rc.2. It adds XRF/DExtra stream parsing
+and preserves reflector history across inbound-client expiry such as the
+dashboard identity 1NFO. A plain updater still selects the latest published
+stable release (v0.5.1); merging these changes does not move that stable tag.
+
+To select the tested candidate explicitly from an existing tools checkout:
+
+```bash
+bash scripts/update-dashboard.sh --ref fix/xrf-activity \
+  --check-url http://127.0.0.1/dashboard/index.php
+```
+
+Use the site's working local verification URL if different. Detailed g2_link
+activity additionally needs `QSO_DETAILS=Y` active in the running process and a
+readable, append-preserved configured log. An update cannot reconstruct unlogged
+transmissions or enable this setting. Preserve existing logs and inspect the
+actual service launcher before applying configuration changes. See
+[logging prerequisites](INSTALL.md#g2_link-activity-logging-and-history-retention).
+
 ## Get the current tools
 
 Run as root on the gateway. Download a fresh checkout into a new directory if an older checkout has local edits or line-ending problems:

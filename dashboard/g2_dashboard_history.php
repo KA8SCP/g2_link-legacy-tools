@@ -125,10 +125,10 @@ function g2DashboardHistoryRead($logfile)
             }
 
             // Keep every state-changing pattern used by g2RemoteHistoryRead,
-            // plus DCS headers. Other lines have already had their timestamps
+            // plus DCS and XRF/DExtra headers. Other lines have already had their timestamps
             // checked above and need not be copied and scanned twice more.
             if (!preg_match('/startup|starting|shutdown|timeout|timed out|disconnect|' .
-                'sending link request|Unlinking from|sending File:|START from dcs:/i', $line)) continue;
+                'sending link request|Unlinking from|sending File:|START from (?:dcs|remote g2):/i', $line)) continue;
             if (fwrite($copy, $line) !== strlen($line)) {
                 $result['error'] = 'Cannot copy g2_link source';
                 break;
@@ -195,7 +195,7 @@ function g2DashboardHistoryRead($logfile)
     return $result;
 }
 
-/* Only confirmed DCS associations are currently supported. Absence of evidence
+/* Only confirmed DCS and XRF/DExtra associations are currently supported. Absence of evidence
  * is Unknown, never an assertion that the module was disconnected. */
 function g2DashboardLinkAt($history, $epoch, $module)
 {
