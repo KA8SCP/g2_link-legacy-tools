@@ -10,6 +10,8 @@ This installs the dashboard on a gateway with an existing web server with workin
 - Git, curl, sha256sum, tar, install, mktemp, realpath, getent and normal coreutils.
 - The executable prompt defaults to `/root/g2_link/g2_link`. Press Enter for that installation layout, or supply the absolute path to the installed executable if it differs. This is a prerequisite check only: the installer does not execute, relocate or change permissions on g2_link.
 - An installed executable g2_link and readable, nonempty g2_link status HTML are mandatory. These are checked before PHP requirements, downloads, backups or deployment; there is no reduced-mode override. Existing DPlus inputs are also required as appropriate. Missing optional logs retain their explicit confirmation.
+- Detailed incoming XRF/DCS activity requires **`QSO_DETAILS=Y`** in the running g2_link configuration and append-mode logging to the configured readable log. See [activity logging](#g2_link-activity-logging-and-history-retention); status-page availability alone does not qualify detailed activity.
+- Nginx sites must already route the dashboard entry point to PHP-FPM; a running pool alone is insufficient. See [dashboard-only Nginx routing](NGINX-DASHBOARD.md).
 - The correct PHP worker user/group and readable source paths. Unix permissions are checked with `runuser` when available. HTTP verification additionally checks the actual PHP/web deployment. SELinux stays enabled; `restorecon` is used when available.
 
 ## Web-runtime readiness before installation
@@ -105,8 +107,7 @@ not prove that the existing process has reloaded it. Do not restart blindly:
 first preserve the log and inspect the launcher/rotation setup.
 
 Verify that stdout/stderr reach the configured dashboard log and that service
-startup preserves existing history. For a shell launcher, `>> /var/log/g2_link.log
-2>&1` appends whereas a single `>` can truncate at startup. Removing redirection
+startup preserves existing history. For a shell launcher, `>> /var/log/g2_link.log 2>&1` appends whereas a single `>` can truncate at startup. Removing redirection
 entirely can send output elsewhere. A native systemd unit needs its own output
 configuration; `>` or `>>` in ExecStart is not shell redirection unless an
 explicit shell is used. Inspect the real unit and any invoked script rather than
@@ -119,6 +120,18 @@ pgrep -af '[g]2_link'
 systemctl --no-pager cat g2_link.service
 grep -n 'QSO_DETAILS' /root/g2_link/g2_link.cfg
 ```
+
+On VE7VIC (AlmaLinux 9.8), the native unit already contained:
+
+```ini
+StandardOutput=append:/var/log/g2_link.log
+StandardError=append:/var/log/g2_link.log
+```
+
+No unit edit was required. The administrator enabled QSO_DETAILS and restarted
+g2_link after preserving the log; subsequent XRF headers were observed. Do not
+create a legacy init script for such a native unit. These append directives are
+an observed AlmaLinux example, not an instruction for older systemd versions.
 
 If the unit invokes `/etc/rc.d/init.d/g2_link` or another wrapper, inspect that
 file before editing. Confirm the process's open log destination as well as its
