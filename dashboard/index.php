@@ -196,6 +196,24 @@ $host=dashboardConfig('callsign');
 $mods = array_keys($gl);
 sort($mods);
 
+function restorationStatus($flag)
+{
+    $entries = @scandir(dirname($flag));
+    if ($entries === false) {
+        return 'Restoration status unavailable';
+    }
+    if (!in_array(basename($flag), $entries, true)) {
+        return 'Automatic restoration enabled';
+    }
+    $modified = @filemtime($flag);
+    if ($modified === false) {
+        return 'Manual override active (timestamp unavailable)';
+    }
+    return 'Manual override active since ' . date('Y-m-d H:i:s T', $modified);
+}
+
+$pauseFlags = dashboardConfig('restoration_pause_flags');
+
 ?>
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="60"><title><?=htmlspecialchars($host)?> D-STAR Gateway</title><script src="theme.js?v=<?=rawurlencode(DASHBOARD_VERSION)?>"></script><link rel="stylesheet" href="style.css?v=<?=rawurlencode(DASHBOARD_VERSION)?>"></head>
 <body><header><div class="wrap header-row"><div><h1><?=htmlspecialchars($host)?> D-STAR Gateway</h1><p>Unified DPlus + g2_link Status</p></div><button id="theme-toggle" type="button" aria-pressed="false" hidden>Dark display</button></div></header><main class="wrap">
@@ -217,7 +235,11 @@ if ($conf) {
     $statusClass = 'ok';
 }
 ?>
-<div class="flag <?=$statusClass?>"><?=htmlspecialchars($status)?></div></article>
+<div class="flag <?=$statusClass?>"><?=htmlspecialchars($status)?></div>
+<?php if (isset($pauseFlags[$m])): ?>
+<div class="kv"><b>Restoration</b><span><?=htmlspecialchars(restorationStatus($pauseFlags[$m]), ENT_QUOTES, 'UTF-8')?></span></div>
+<?php endif; ?>
+</article>
 <?php endforeach;?></section>
 <h2>Software &amp; Sources</h2><section class="grid two">
 <article class="card"><h3>DPlus</h3><div class="kv"><b>Version</b><span><?=htmlspecialchars(ver($dp,'/DPLUS\s+version\s+([^<]+)/i'))?></span></div><div class="kv"><b>Source</b><span><?=$dp?'Online':'Unavailable'?></span></div><div class="kv"><b>Freshness</b><span><?=htmlspecialchars(agev($dpfile))?></span></div></article>
