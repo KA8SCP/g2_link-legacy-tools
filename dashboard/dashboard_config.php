@@ -11,13 +11,27 @@ function dashboardConfig($key)
             'dplus_status' => '/dstar/tmp/status.html',
             'g2_status' => '/var/www/html/fs.html',
             'dplus_log' => '/var/log/dplus.log',
-            'g2_log' => '/var/log/g2_link.log'
+            'g2_log' => '/var/log/g2_link.log',
+            'restoration_pause_flags' => array()
         );
         $path = __DIR__ . '/dashboard.local.php';
         if (is_file($path)) {
             $local = require $path;
             if (!is_array($local)) throw new RuntimeException('Invalid dashboard configuration');
             foreach ($local as $name => $value) {
+                if ($name === 'restoration_pause_flags' && is_array($value)) {
+                    foreach ($value as $module => $flag) {
+                        if (!preg_match('/^[A-Z]$/D', (string) $module) ||
+                            !is_string($flag) || $flag === '' || $flag[0] !== '/' ||
+                            preg_match('/[\r\n\x00]/', $flag) ||
+                            in_array(basename($flag), array('', '.', '..'), true) ||
+                            substr($flag, -1) === '/') {
+                            throw new RuntimeException('Invalid restoration pause flag');
+                        }
+                    }
+                    $settings[$name] = $value;
+                    continue;
+                }
                 if (!array_key_exists($name, $settings) || !is_string($value)) {
                     throw new RuntimeException('Invalid dashboard setting');
                 }

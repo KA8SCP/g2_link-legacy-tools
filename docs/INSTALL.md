@@ -308,3 +308,34 @@ deployment and PC/mobile browser checks. Radio activity and legacy-page
 continuity were not confirmed in that report and remain separate. This does
 not establish live qualification for every web stack or the new preflight-only
 mode; see RELEASE-READINESS.md.
+
+## Optional restoration status
+
+Add a module-to-flag map to the existing array returned by `dashboard.local.php`:
+
+```php
+'restoration_pause_flags' => array(
+    'C' => '/var/lib/persistent_link_c/paused'
+),
+```
+
+This is the WB1GOF example. A B-only gateway can use `'B'` with the absolute
+path used by its own restoration job. The dashboard displays the row on
+configured module cards only, independently of the link software or reflector.
+
+Configure a flag only if its presence pauses automatic restoration and its
+absence enables it. The displayed time is the flag's modification time in the
+dashboard timezone. Touching the flag again refreshes that time.
+
+Give the PHP worker read and search access to the flag directory. Keep write
+access with the flag manager. On WB1GOF, a root-owned directory with group
+`apache` and mode `0750` meets those requirements. The WB1GOF unlink script
+must preserve these settings when it runs:
+
+```bash
+install -d -o root -g apache -m 0750 /var/lib/persistent_link_c
+```
+
+Use the actual PHP worker group at your site. Verify the row over HTTP in both
+flag states during an approved test. If the directory cannot be read, the row
+shows **Restoration status unavailable**.
